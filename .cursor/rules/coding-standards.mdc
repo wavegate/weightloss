@@ -1,0 +1,35 @@
+---
+description: Core coding standards for this project
+alwaysApply: true
+---
+
+# Coding Standards
+
+## Scope and simplicity
+
+- Make the smallest change that solves the problem. Do not refactor or expand scope unless asked.
+- Prefer clear, direct code over abstractions used only once.
+- Match existing naming, structure, and patterns in the codebase before introducing new ones.
+
+## Code quality
+
+- Keep functions and modules focused on one responsibility.
+- Use descriptive names; avoid abbreviations unless they are project-standard.
+- Add comments only for non-obvious business logic or tricky technical constraints—not for obvious code.
+
+## Testing
+
+- Add or update tests when changing behavior that can break silently.
+- Skip tests that only restate implementation details (e.g. asserting a getter returns what was set).
+- Prefer testing user-visible behavior and edge cases over internal wiring.
+
+## Git and commits
+
+- Do not create commits unless explicitly requested.
+- Write commit messages in complete sentences: what changed and why (1–2 sentences).
+- Never commit secrets, credentials, or local env files (`.env`, keys, tokens).
+
+## Dependencies and files
+
+- Do not add new dependencies without a clear need; prefer the standard library or what the project already uses.
+- Do not create markdown or doc files unless the user asks for them.
