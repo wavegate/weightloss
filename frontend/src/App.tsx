@@ -1,38 +1,67 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "./assets/vite.svg";
+import { useEffect, useState } from 'react'
+import { fetchHealth, type HealthStatus } from './services/healthService'
+
+type HealthState =
+  | { status: 'loading' }
+  | { status: 'success'; data: HealthStatus }
+  | { status: 'error'; message: string }
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [health, setHealth] = useState<HealthState>({ status: 'loading' })
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetchHealth()
+      .then((data) => {
+        if (!cancelled) {
+          setHealth({ status: 'success', data })
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          const message =
+            error instanceof Error ? error.message : 'Failed to reach API'
+          setHealth({ status: 'error', message })
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-8 bg-slate-950 px-4 text-slate-100">
-      <div className="flex items-center gap-6">
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="h-16 w-16" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img
-            src={reactLogo}
-            className="h-16 w-16 motion-safe:animate-[spin_20s_linear_infinite]"
-            alt="React logo"
-          />
-        </a>
-      </div>
-      <h1 className="text-4xl font-semibold tracking-tight">Vite + React</h1>
-      <button
-        type="button"
-        className="rounded-lg border border-slate-700 bg-slate-900 px-5 py-2.5 font-medium transition hover:border-violet-500 hover:bg-slate-800"
-        onClick={() => setCount((value) => value + 1)}
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-slate-950 px-4 text-slate-100">
+      <h1 className="text-3xl font-semibold tracking-tight">Weightloss</h1>
+
+      <section
+        className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-6"
+        aria-live="polite"
       >
-        Count is {count}
-      </button>
-      <p className="text-slate-400">
-        Edit <code className="text-violet-300">src/App.tsx</code> and save to
-        test HMR
-      </p>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-slate-400">
+          API health
+        </h2>
+
+        {health.status === 'loading' && (
+          <p className="mt-3 text-slate-300">Checking backend…</p>
+        )}
+
+        {health.status === 'success' && (
+          <p className="mt-3 text-lg">
+            Backend status:{' '}
+            <span className="font-mono text-emerald-400">
+              {health.data.status}
+            </span>
+          </p>
+        )}
+
+        {health.status === 'error' && (
+          <p className="mt-3 text-red-400">{health.message}</p>
+        )}
+      </section>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
