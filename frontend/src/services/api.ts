@@ -30,18 +30,22 @@ async function buildHeaders(includeJson: boolean): Promise<HeadersInit> {
   return headers
 }
 
+async function parseErrorResponse(response: Response): Promise<never> {
+  let message = response.statusText
+  try {
+    const body = (await response.json()) as { detail?: unknown }
+    if (typeof body.detail === 'string') {
+      message = body.detail
+    }
+  } catch {
+    // ignore non-JSON error bodies
+  }
+  throw new ApiError(message, response.status)
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    let message = response.statusText
-    try {
-      const body = (await response.json()) as { detail?: unknown }
-      if (typeof body.detail === 'string') {
-        message = body.detail
-      }
-    } catch {
-      // ignore non-JSON error bodies
-    }
-    throw new ApiError(message, response.status)
+    return parseErrorResponse(response)
   }
 
   return response.json() as Promise<T>
@@ -61,4 +65,23 @@ export async function apiPost<T, B>(path: string, body: B): Promise<T> {
     body: JSON.stringify(body),
   })
   return parseResponse<T>(response)
+}
+
+export async function apiPostForm<T>(path: string, form: FormData): Promise<T> {
+  const response = await fetch(`${getBackendUrl()}${path}`, {
+    method: 'POST',
+    headers: await buildHeaders(false),
+    body: form,
+  })
+  return parseResponse<T>(response)
+}
+
+export async function apiDelete(path: string): Promise<void> {
+  const response = await fetch(`${getBackendUrl()}${path}`, {
+    method: 'DELETE',
+    headers: await buildHeaders(false),
+  })
+  if (!response.ok) {
+    return parseErrorResponse(response)
+  }
 }

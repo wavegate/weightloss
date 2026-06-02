@@ -1,4 +1,4 @@
-import { useFoodsQuery } from '../hooks/useFoods'
+import { useDeleteFoodMutation, useFoodsQuery } from '../hooks/useFoods'
 import type { FoodEntry } from '../services/foodService'
 
 function formatRecordedDate(isoDate: string): string {
@@ -14,7 +14,15 @@ function formatMacro(value: number): string {
   return value.toFixed(1)
 }
 
-function FoodRow({ entry }: { entry: FoodEntry }) {
+function FoodRow({
+  entry,
+  onDelete,
+  isDeleting,
+}: {
+  entry: FoodEntry
+  onDelete: (entry: FoodEntry) => void
+  isDeleting: boolean
+}) {
   return (
     <tr className="border-t border-slate-800 align-top">
       <td className="px-3 py-3 text-slate-200">
@@ -32,12 +40,35 @@ function FoodRow({ entry }: { entry: FoodEntry }) {
         <br />
         F {formatMacro(entry.fat_g)}g
       </td>
+      <td className="px-3 py-3 text-right">
+        <button
+          type="button"
+          onClick={() => onDelete(entry)}
+          disabled={isDeleting}
+          className="text-sm text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`Remove ${entry.name}`}
+        >
+          {isDeleting ? 'Removing…' : 'Remove'}
+        </button>
+      </td>
     </tr>
   )
 }
 
 export function FoodsTable() {
   const foodsQuery = useFoodsQuery()
+  const deleteFood = useDeleteFoodMutation()
+
+  const handleDelete = (entry: FoodEntry) => {
+    if (
+      !window.confirm(
+        `Remove "${entry.name}" from your food log? This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+    deleteFood.mutate(entry.id)
+  }
 
   if (foodsQuery.isLoading) {
     return <p className="text-slate-400">Loading food log…</p>
@@ -60,7 +91,15 @@ export function FoodsTable() {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-3">
+      {deleteFood.isError && (
+        <p className="text-sm text-red-400">
+          {deleteFood.error instanceof Error
+            ? deleteFood.error.message
+            : 'Failed to remove food entry'}
+        </p>
+      )}
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="text-slate-400">
@@ -68,14 +107,23 @@ export function FoodsTable() {
             <th className="px-3 py-2 font-medium">Food</th>
             <th className="px-3 py-2 font-medium">Calories</th>
             <th className="px-3 py-2 font-medium">Macros</th>
+            <th className="px-3 py-2 font-medium" aria-label="Actions" />
           </tr>
         </thead>
         <tbody>
           {entries.map((entry) => (
-            <FoodRow key={entry.id} entry={entry} />
+            <FoodRow
+              key={entry.id}
+              entry={entry}
+              onDelete={handleDelete}
+              isDeleting={
+                deleteFood.isPending && deleteFood.variables === entry.id
+              }
+            />
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
