@@ -14,9 +14,13 @@ def _file_env() -> dict[str, str | None]:
 
 
 def _lookup_env(key: str) -> str | None:
-    value = os.environ.get(key)
-    if value:
-        return value
+    # Avoid collisions with common OS environment variables.
+    # In particular, `USER` is often set to the Linux login name (e.g. `ec2-user`),
+    # but we want database credentials from `backend/.env`.
+    if key != "USER":
+        value = os.environ.get(key)
+        if value:
+            return value
     file_value = _file_env().get(key)
     return file_value if file_value else None
 
@@ -85,6 +89,7 @@ class Settings:
         self.user = _env("USER")
         self.password = _env("PASSWORD")
         self.database = _env("DATABASE", "weightloss")
+        self.db_sslmode = _env_optional("DB_SSLMODE")
         self.openai_api_key = _env("OPENAI_API_KEY")
         self.openai_model = _env("OPENAI_MODEL", "gpt-5.4")
         frontend_url = _env_optional("FRONTEND_URL")
@@ -104,8 +109,14 @@ class Settings:
 
     @property
     def database_url(self) -> str:
-        return f"postgresql+psycopg://{self._credentials()}/{self.database}"
+        base = f"postgresql+psycopg://{self._credentials()}/{self.database}"
+        if self.db_sslmode:
+            return f"{base}?sslmode={quote_plus(self.db_sslmode)}"
+        return base
 
     @property
     def admin_database_url(self) -> str:
-        return f"postgresql+psycopg://{self._credentials()}/postgres"
+        base = f"postgresql+psycopg://{self._credentials()}/postgres"
+        if self.db_sslmode:
+            return f"{base}?sslmode={quote_plus(self.db_sslmode)}"
+        return base
