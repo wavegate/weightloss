@@ -1,1 +1,14 @@
 @import 'tailwindcss';
+
+/* Left-docked coach panel (app layout, not CopilotKit's default right sidebar). */
+.weightLossCoachPanel .copilotKitChat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.weightLossCoachPanel .copilotKitMessages {
+  flex: 1;
+  min-height: 0;
+}

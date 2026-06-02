@@ -1,35 +1,19 @@
 import { useAuth } from '@clerk/react'
-import { CopilotKit } from '@copilotkit/react-core'
-import { CopilotChat } from '@copilotkit/react-ui'
-import '@copilotkit/react-ui/styles.css'
-import { useEffect, useMemo, useState } from 'react'
 
 import { useMetabolicProfile } from '../hooks/useMetabolicProfile'
-import { getBearerToken } from '../lib/authToken'
-import { createMetabolismHttpAgent } from '../lib/metabolismAgent'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
-
-const METABOLISM_AGENT_URL = `${API_BASE_URL}/copilotkit/ag-ui`
-
-const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
-  .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
 
 function ProfileSummary() {
   const { data: profile, isLoading } = useMetabolicProfile()
 
   if (isLoading) {
-    return (
-      <p className="text-sm text-slate-400">Loading saved profile…</p>
-    )
+    return <p className="text-sm text-slate-400">Loading saved profile…</p>
   }
 
   if (!profile) {
     return (
       <p className="text-sm text-slate-400">
-        No saved profile yet. Chat with the coach to estimate BMR and TDEE,
-        then save when you are ready.
+        No saved profile yet. Ask the weight loss coach in the sidebar to
+        estimate BMR and TDEE, then save when you are ready.
       </p>
     )
   }
@@ -66,88 +50,6 @@ function ProfileSummary() {
   )
 }
 
-function MetabolismChat({ threadId }: { threadId: string }) {
-  const { isLoaded, isSignedIn } = useAuth()
-  const [authHeaders, setAuthHeaders] = useState<Record<string, string>>({})
-  const [hasToken, setHasToken] = useState(false)
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
-      setHasToken(false)
-      setAuthHeaders({})
-      return
-    }
-
-    let cancelled = false
-
-    async function syncAuth() {
-      const token = await getBearerToken()
-      if (cancelled) {
-        return
-      }
-      if (token) {
-        setAuthHeaders({ Authorization: `Bearer ${token}` })
-        setHasToken(true)
-      } else {
-        setAuthHeaders({})
-        setHasToken(false)
-      }
-    }
-
-    void syncAuth()
-    const intervalId = window.setInterval(syncAuth, 45_000)
-
-    return () => {
-      cancelled = true
-      window.clearInterval(intervalId)
-    }
-  }, [isLoaded, isSignedIn])
-
-  const selfManagedAgents = useMemo(() => {
-    if (!hasToken) {
-      return undefined
-    }
-
-    return {
-      metabolism_coach: createMetabolismHttpAgent(METABOLISM_AGENT_URL),
-    }
-  }, [hasToken])
-
-  if (!isLoaded || !hasToken || !selfManagedAgents) {
-    return (
-      <p className="text-sm text-slate-400">Connecting to metabolism coach…</p>
-    )
-  }
-
-  return (
-    <CopilotKit
-      publicLicenseKey={COPILOT_PUBLIC_LICENSE_KEY}
-      runtimeUrl={METABOLISM_AGENT_URL}
-      useSingleEndpoint={false}
-      agent="metabolism_coach"
-      selfManagedAgents={
-        selfManagedAgents as unknown as Parameters<
-          typeof CopilotKit
-        >[0]['selfManagedAgents']
-      }
-      threadId={threadId}
-      headers={authHeaders}
-    >
-      <div className="flex min-h-[28rem] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-        <CopilotChat
-          className="flex-1"
-          labels={{
-            title: 'Metabolism coach',
-            initial:
-              "I'll estimate your BMR (calories at rest) and TDEE (daily burn with activity) using the Mifflin–St Jeor equation.\n\nFirst question: are you male or female?",
-            placeholder: 'e.g. male',
-          }}
-        />
-      </div>
-    </CopilotKit>
-  )
-}
-
 export function MetabolismPage() {
   const { userId, isLoaded } = useAuth()
 
@@ -156,17 +58,16 @@ export function MetabolismPage() {
   }
 
   if (!userId) {
-    return <p className="text-sm text-slate-400">Sign in to use the metabolism coach.</p>
+    return <p className="text-sm text-slate-400">Sign in to view your profile.</p>
   }
 
   return (
     <section className="flex flex-col gap-6">
       <div className="space-y-2">
-        <h2 className="text-xl font-medium text-slate-100">Metabolism coach</h2>
+        <h2 className="text-xl font-medium text-slate-100">Metabolic profile</h2>
         <p className="text-sm text-slate-400">
-          Estimate basal metabolic rate (BMR) and total daily energy expenditure
-          (TDEE) with guided questions. Calculations use the Mifflin–St Jeor
-          equation.
+          BMR and TDEE from the Mifflin–St Jeor equation. Use the coach in the
+          left sidebar to update your profile.
         </p>
       </div>
 
@@ -174,8 +75,6 @@ export function MetabolismPage() {
         <h3 className="mb-3 text-sm font-medium text-slate-300">Saved profile</h3>
         <ProfileSummary />
       </div>
-
-      <MetabolismChat threadId={userId} />
     </section>
   )
 }

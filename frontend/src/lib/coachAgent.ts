@@ -2,7 +2,7 @@ import { HttpAgent } from '@ag-ui/client'
 
 import { getBearerToken } from './authToken'
 
-export function createMetabolismHttpAgent(url: string) {
+export function createCoachHttpAgent(url: string) {
   return new HttpAgent({
     url,
     fetch: async (requestUrl, init) => {

@@ -6,13 +6,13 @@ from ag_ui.encoder import EventEncoder
 from copilotkit.sdk import COPILOTKIT_SDK_VERSION
 
 from app.auth.clerk import get_current_user_id
-from app.services.metabolism_agent import get_metabolism_agui_agent
+from app.services.coach_agent import get_weight_loss_coach_agui_agent
 
 router = APIRouter(tags=["copilot"])
 
 
 @router.post("/copilotkit/ag-ui")
-async def metabolism_ag_ui(
+async def weight_loss_coach_ag_ui(
     input_data: RunAgentInput,
     request: Request,
     user_id: str = Depends(get_current_user_id),
@@ -21,7 +21,7 @@ async def metabolism_ag_ui(
     accept_header = request.headers.get("accept")
     encoder = EventEncoder(accept=accept_header)
 
-    agent = get_metabolism_agui_agent().clone()
+    agent = get_weight_loss_coach_agui_agent().clone()
     agent.config = {
         "configurable": {
             "user_id": user_id,
@@ -39,7 +39,7 @@ async def metabolism_ag_ui(
 
 
 @router.get("/copilotkit/ag-ui/info")
-async def metabolism_ag_ui_info() -> JSONResponse:
+async def weight_loss_coach_ag_ui_info() -> JSONResponse:
     """CopilotKit runtime discovery — agents run via HttpAgent, not remote proxy."""
     return JSONResponse(
         {
@@ -52,6 +52,6 @@ async def metabolism_ag_ui_info() -> JSONResponse:
 
 
 @router.get("/copilotkit/ag-ui/health")
-def metabolism_ag_ui_health() -> dict:
-    agent = get_metabolism_agui_agent()
+def weight_loss_coach_ag_ui_health() -> dict:
+    agent = get_weight_loss_coach_agui_agent()
     return {"status": "ok", "agent": {"name": agent.name}}
