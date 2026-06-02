@@ -5,11 +5,11 @@ import '@copilotkit/react-ui/styles.css'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { getBackendUrl } from '../lib/backendUrl'
-import { getBearerToken } from '../lib/authToken'
 import {
   createCoachHttpAgent,
   WEIGHT_LOSS_COACH_AGENT_ID,
 } from '../lib/coachAgent'
+import { CoachAgentRoster } from './CoachAgentRoster'
 import { CoachNavigationTools } from './CoachNavigationTools'
 import { CoachQuerySync } from './CoachQuerySync'
 
@@ -21,21 +21,18 @@ type WeightLossCoachShellProps = {
 }
 
 export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
-  const { userId, isLoaded, isSignedIn } = useAuth()
+  const { userId, isLoaded, isSignedIn, getToken } = useAuth()
   const [authHeaders, setAuthHeaders] = useState<Record<string, string>>({})
   const [hasToken, setHasToken] = useState(false)
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
-      setHasToken(false)
-      setAuthHeaders({})
+    if (!isLoaded) {
       return
     }
 
     let cancelled = false
-
     async function syncAuth() {
-      const token = await getBearerToken()
+      const token = await getToken({ skipCache: true }).catch(() => null)
       if (cancelled) {
         return
       }
@@ -49,13 +46,11 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
     }
 
     void syncAuth()
-    const intervalId = window.setInterval(syncAuth, 45_000)
 
     return () => {
       cancelled = true
-      window.clearInterval(intervalId)
     }
-  }, [isLoaded, isSignedIn])
+  }, [getToken, isLoaded, isSignedIn])
 
   const selfManagedAgents = useMemo(() => {
     if (!hasToken) {
@@ -64,9 +59,11 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
 
     const coachAgentUrl = `${getBackendUrl()}/copilotkit/ag-ui`
     return {
-      [WEIGHT_LOSS_COACH_AGENT_ID]: createCoachHttpAgent(coachAgentUrl),
+      [WEIGHT_LOSS_COACH_AGENT_ID]: createCoachHttpAgent(coachAgentUrl, () =>
+        getToken({ skipCache: true }),
+      ),
     }
-  }, [hasToken])
+  }, [getToken, hasToken])
 
   if (!isLoaded || !userId) {
     return <>{children}</>
@@ -74,8 +71,13 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
 
   if (!hasToken || !selfManagedAgents) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-slate-950 text-slate-400">
-        Connecting to your weight loss assistant…
+      <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
+        <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
+          <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-6 text-slate-400">
+            Connecting to your weight loss assistant…
+          </div>
+        </aside>
+        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     )
   }
@@ -98,6 +100,9 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
       <CoachQuerySync />
       <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
         <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
+          <div className="border-b border-slate-800 px-4 py-4">
+            <CoachAgentRoster />
+          </div>
           <CopilotChat
             className="flex h-full min-h-0 flex-1 flex-col"
             labels={{

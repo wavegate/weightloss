@@ -5,11 +5,14 @@ import { getBearerToken } from './authToken'
 export const WEIGHT_LOSS_COACH_AGENT_ID = 'weight_loss_coach'
 import { todayIsoDate } from './nutritionTargets'
 
-export function createCoachHttpAgent(url: string) {
+type TokenGetter = () => Promise<string | null>
+
+export function createCoachHttpAgent(url: string, tokenGetter?: TokenGetter) {
+  const getToken = tokenGetter ?? getBearerToken
   return new HttpAgent({
     url,
     fetch: async (requestUrl, init) => {
-      const token = await getBearerToken()
+      const token = await getToken()
       const headers = new Headers(init.headers)
 
       if (!token) {

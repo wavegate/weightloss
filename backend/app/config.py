@@ -65,6 +65,9 @@ def build_cors_origins(
             seen.add(normalized)
             origins.append(normalized)
 
+    for origin in _DEFAULT_CORS_ORIGINS:
+        add(origin)
+
     if frontend_url:
         add(normalize_origin(frontend_url))
 
@@ -72,9 +75,7 @@ def build_cors_origins(
         for part in cors_origins_raw.split(","):
             add(part)
 
-    if origins:
-        return origins
-    return list(_DEFAULT_CORS_ORIGINS)
+    return origins
 
 
 @lru_cache

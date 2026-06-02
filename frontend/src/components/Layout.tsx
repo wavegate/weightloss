@@ -1,7 +1,6 @@
 import { UserButton } from '@clerk/react'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { CoachAgentRoster } from './CoachAgentRoster'
 import { WeightLossCoachShell } from './WeightLossCoachShell'
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -18,7 +17,6 @@ export function Layout() {
       <div className="flex flex-1 flex-col px-4 py-8">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
           <header className="space-y-4">
-            <CoachAgentRoster />
             <div className="flex items-center justify-between gap-4">
               <h1 className="text-3xl font-semibold tracking-tight">Weightloss</h1>
               <UserButton />
