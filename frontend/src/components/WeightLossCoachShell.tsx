@@ -10,6 +10,7 @@ import {
   WEIGHT_LOSS_COACH_AGENT_ID,
 } from '../lib/coachAgent'
 import { CoachNavigationTools } from './CoachNavigationTools'
+import { CoachQuerySync } from './CoachQuerySync'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
@@ -97,6 +98,7 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
       headers={authHeaders}
     >
       <CoachNavigationTools />
+      <CoachQuerySync />
       <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
         <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
           <CopilotChat
