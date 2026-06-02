@@ -13,6 +13,9 @@ const API_BASE_URL =
 
 const METABOLISM_AGENT_URL = `${API_BASE_URL}/copilotkit/ag-ui`
 
+const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
+  .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
+
 function ProfileSummary() {
   const { data: profile, isLoading } = useMetabolicProfile()
 
@@ -118,6 +121,7 @@ function MetabolismChat({ threadId }: { threadId: string }) {
 
   return (
     <CopilotKit
+      publicLicenseKey={COPILOT_PUBLIC_LICENSE_KEY}
       runtimeUrl={METABOLISM_AGENT_URL}
       useSingleEndpoint={false}
       agent="metabolism_coach"
