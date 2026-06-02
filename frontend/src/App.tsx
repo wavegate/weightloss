@@ -5,6 +5,7 @@ import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
 import { FoodLogPage } from './pages/FoodLogPage'
 import { MeasurementsPage } from './pages/MeasurementsPage'
+import { MetabolismPage } from './pages/MetabolismPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 
@@ -26,6 +27,7 @@ function App() {
             <Route index element={<Navigate to="/measurements" replace />} />
             <Route path="measurements" element={<MeasurementsPage />} />
             <Route path="food" element={<FoodLogPage />} />
+            <Route path="metabolism" element={<MetabolismPage />} />
           </Route>
         </Route>
       </Routes>
