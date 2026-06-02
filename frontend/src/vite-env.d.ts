@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string
+  /** @deprecated Use VITE_API_URL */
+  readonly VITE_BACKEND_URL?: string
   readonly VITE_CLERK_PUBLISHABLE_KEY: string
   readonly VITE_COPILOT_PUBLIC_LICENSE_KEY?: string
 }

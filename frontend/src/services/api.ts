@@ -2,8 +2,6 @@ import { getBackendUrl } from '../lib/backendUrl'
 import { getBearerToken } from '../lib/authToken'
 import { getUserTimezone, todayIsoDate } from '../lib/nutritionTargets'
 
-const API_BASE_URL = getBackendUrl()
-
 export class ApiError extends Error {
   status: number
 
@@ -50,14 +48,14 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getBackendUrl()}${path}`, {
     headers: await buildHeaders(false),
   })
   return parseResponse<T>(response)
 }
 
 export async function apiPost<T, B>(path: string, body: B): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getBackendUrl()}${path}`, {
     method: 'POST',
     headers: await buildHeaders(true),
     body: JSON.stringify(body),

@@ -13,8 +13,6 @@ import {
 import { CoachNavigationTools } from './CoachNavigationTools'
 import { CoachQuerySync } from './CoachQuerySync'
 
-const COACH_AGENT_URL = `${getBackendUrl()}/copilotkit/ag-ui`
-
 const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
   .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
 
@@ -64,8 +62,9 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
       return undefined
     }
 
+    const coachAgentUrl = `${getBackendUrl()}/copilotkit/ag-ui`
     return {
-      [WEIGHT_LOSS_COACH_AGENT_ID]: createCoachHttpAgent(COACH_AGENT_URL),
+      [WEIGHT_LOSS_COACH_AGENT_ID]: createCoachHttpAgent(coachAgentUrl),
     }
   }, [hasToken])
 
@@ -84,7 +83,7 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
   return (
     <CopilotKit
       publicLicenseKey={COPILOT_PUBLIC_LICENSE_KEY}
-      runtimeUrl={COACH_AGENT_URL}
+      runtimeUrl={`${getBackendUrl()}/copilotkit/ag-ui`}
       useSingleEndpoint={false}
       agent={WEIGHT_LOSS_COACH_AGENT_ID}
       selfManagedAgents={
