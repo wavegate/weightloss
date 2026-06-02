@@ -27,6 +27,8 @@ class Settings:
         self.user = _env("USER")
         self.password = _env("PASSWORD")
         self.database = _env("DATABASE", "weightloss")
+        self.openai_api_key = _env("OPENAI_API_KEY")
+        self.openai_model = _env("OPENAI_MODEL", "gpt-5.4")
 
     def _credentials(self) -> str:
         return (

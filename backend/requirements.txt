@@ -4,3 +4,6 @@ sqlalchemy>=2.0.0
 alembic>=1.14.0
 psycopg[binary]>=3.2.0
 python-dotenv>=1.0.0
+deepagents>=0.1.0
+langchain-openai>=0.3.0
+ddgs>=9.0.0

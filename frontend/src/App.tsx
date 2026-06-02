@@ -1,3 +1,5 @@
+import { FoodForm } from './components/FoodForm'
+import { FoodsTable } from './components/FoodsTable'
 import { MeasurementForm } from './components/MeasurementForm'
 import { MeasurementsTable } from './components/MeasurementsTable'
 import { useHealthQuery } from './hooks/useHealth'
@@ -31,9 +33,23 @@ function App() {
 
         <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
           <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-slate-400">
-            History
+            Body measurements
           </h2>
           <MeasurementsTable />
+        </section>
+
+        <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-slate-400">
+            Food log
+          </h2>
+          <FoodForm />
+        </section>
+
+        <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-slate-400">
+            Food history
+          </h2>
+          <FoodsTable />
         </section>
       </div>
     </div>
