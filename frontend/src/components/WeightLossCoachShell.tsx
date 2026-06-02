@@ -9,7 +9,6 @@ import {
   createCoachHttpAgent,
   WEIGHT_LOSS_COACH_AGENT_ID,
 } from '../lib/coachAgent'
-import { CoachHandoffIndicator } from './CoachHandoffIndicator'
 import { CoachNavigationTools } from './CoachNavigationTools'
 
 const API_BASE_URL =
@@ -100,7 +99,6 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
       <CoachNavigationTools />
       <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
         <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
-          <CoachHandoffIndicator />
           <CopilotChat
             className="flex h-full min-h-0 flex-1 flex-col"
             labels={{
