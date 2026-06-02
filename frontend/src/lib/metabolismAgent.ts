@@ -1,19 +1,19 @@
 import { HttpAgent } from '@ag-ui/client'
 
-type GetToken = () => Promise<string | null>
+import { getBearerToken } from './authToken'
 
-export function createMetabolismHttpAgent(url: string, getToken: GetToken) {
+export function createMetabolismHttpAgent(url: string) {
   return new HttpAgent({
     url,
     fetch: async (requestUrl, init) => {
-      const token = await getToken()
+      const token = await getBearerToken()
       const headers = new Headers(init.headers)
 
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`)
-      } else {
-        headers.delete('Authorization')
+      if (!token) {
+        throw new Error('Missing Clerk session. Please sign in again.')
       }
+
+      headers.set('Authorization', `Bearer ${token}`)
 
       return fetch(requestUrl, { ...init, headers })
     },

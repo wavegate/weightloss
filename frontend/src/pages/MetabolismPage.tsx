@@ -2,9 +2,10 @@ import { useAuth } from '@clerk/react'
 import { CopilotKit } from '@copilotkit/react-core'
 import { CopilotChat } from '@copilotkit/react-ui'
 import '@copilotkit/react-ui/styles.css'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useMetabolicProfile } from '../hooks/useMetabolicProfile'
+import { getBearerToken } from '../lib/authToken'
 import { createMetabolismHttpAgent } from '../lib/metabolismAgent'
 
 const API_BASE_URL =
@@ -63,21 +64,53 @@ function ProfileSummary() {
 }
 
 function MetabolismChat({ threadId }: { threadId: string }) {
-  const { getToken, isLoaded } = useAuth()
+  const { isLoaded, isSignedIn } = useAuth()
+  const [authHeaders, setAuthHeaders] = useState<Record<string, string>>({})
+  const [hasToken, setHasToken] = useState(false)
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      setHasToken(false)
+      setAuthHeaders({})
+      return
+    }
+
+    let cancelled = false
+
+    async function syncAuth() {
+      const token = await getBearerToken()
+      if (cancelled) {
+        return
+      }
+      if (token) {
+        setAuthHeaders({ Authorization: `Bearer ${token}` })
+        setHasToken(true)
+      } else {
+        setAuthHeaders({})
+        setHasToken(false)
+      }
+    }
+
+    void syncAuth()
+    const intervalId = window.setInterval(syncAuth, 45_000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [isLoaded, isSignedIn])
 
   const selfManagedAgents = useMemo(() => {
-    if (!isLoaded) {
+    if (!hasToken) {
       return undefined
     }
 
     return {
-      metabolism_coach: createMetabolismHttpAgent(METABOLISM_AGENT_URL, () =>
-        getToken(),
-      ),
+      metabolism_coach: createMetabolismHttpAgent(METABOLISM_AGENT_URL),
     }
-  }, [getToken, isLoaded])
+  }, [hasToken])
 
-  if (!selfManagedAgents) {
+  if (!isLoaded || !hasToken || !selfManagedAgents) {
     return (
       <p className="text-sm text-slate-400">Connecting to metabolism coach…</p>
     )
@@ -94,6 +127,7 @@ function MetabolismChat({ threadId }: { threadId: string }) {
         >[0]['selfManagedAgents']
       }
       threadId={threadId}
+      headers={authHeaders}
     >
       <div className="flex min-h-[28rem] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
         <CopilotChat

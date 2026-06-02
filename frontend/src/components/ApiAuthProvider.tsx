@@ -7,7 +7,7 @@ export function ApiAuthProvider({ children }: { children: React.ReactNode }) {
   const { getToken, isLoaded } = useAuth()
 
   useEffect(() => {
-    setAuthTokenGetter(() => getToken())
+    setAuthTokenGetter(() => getToken({ skipCache: true }))
   }, [getToken])
 
   if (!isLoaded) {
