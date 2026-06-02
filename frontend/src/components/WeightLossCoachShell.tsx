@@ -96,10 +96,10 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
       headers={authHeaders}
     >
       <CoachNavigationTools />
-      <div className="flex min-h-svh bg-slate-950 text-slate-100">
-        <aside className="weightLossCoachPanel flex w-[min(100%,28rem)] shrink-0 flex-col border-r border-slate-800 bg-slate-900">
+      <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
+        <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
           <CopilotChat
-            className="flex h-svh min-h-0 flex-1 flex-col"
+            className="flex h-full min-h-0 flex-1 flex-col"
             labels={{
               title: 'Weight loss coach',
               initial:
@@ -108,7 +108,7 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
             }}
           />
         </aside>
-        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     </CopilotKit>
   )

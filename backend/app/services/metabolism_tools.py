@@ -4,13 +4,19 @@ from typing import Annotated, Literal
 
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg, tool
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from app.database import SessionLocal
 from app.models.body_measurement import BodyMeasurement
 from app.models.food_entry import FoodEntry
 from app.models.metabolic_profile import MetabolicProfile
 from app.schemas.metabolic_profile import MetabolicProfileUpsert
+from app.services.food_dates import food_query_window, summarize_food_by_local_date
+from app.services.user_date import (
+    effective_local_calendar_date,
+    resolve_user_local_date,
+    resolve_user_timezone,
+)
 from app.services.metabolic import (
     ACTIVITY_MULTIPLIERS,
     ActivityLevel,
@@ -95,15 +101,16 @@ def get_user_context(
 ) -> str:
     """Load saved metabolic profile, latest weight, and recent food log averages."""
     user_id = _user_id(config)
-    today = date.today()
-    week_ago = today - timedelta(days=7)
+    today = resolve_user_local_date(config)
+    user_timezone = resolve_user_timezone(config)
+    fetch_from = food_query_window(today)
 
     with SessionLocal() as db:
         profile = db.scalar(
             select(MetabolicProfile).where(MetabolicProfile.user_id == user_id)
         )
-        latest_weight = db.scalar(
-            select(BodyMeasurement.body_weight_lbs)
+        latest_measurement = db.scalar(
+            select(BodyMeasurement)
             .where(BodyMeasurement.user_id == user_id)
             .order_by(
                 BodyMeasurement.recorded_at.desc(),
@@ -111,24 +118,50 @@ def get_user_context(
             )
             .limit(1)
         )
-        food_stats = db.execute(
-            select(
-                func.count(FoodEntry.id),
-                func.coalesce(func.avg(FoodEntry.calories), 0),
-            ).where(
-                FoodEntry.user_id == user_id,
-                FoodEntry.recorded_at >= week_ago,
-            )
-        ).one()
+        food_entries = list(
+            db.scalars(
+                select(FoodEntry).where(
+                    FoodEntry.user_id == user_id,
+                    FoodEntry.recorded_at >= fetch_from,
+                )
+            ).all()
+        )
 
-    entry_count, avg_calories = food_stats
+    _, food_today = summarize_food_by_local_date(
+        food_entries,
+        user_local_today=today,
+        user_timezone=user_timezone,
+    )
+    week_entries = [
+        e
+        for e in food_entries
+        if effective_local_calendar_date(
+            e.recorded_at,
+            user_local_today=today,
+            user_timezone=user_timezone,
+        )
+        >= today - timedelta(days=7)
+    ]
+    week_count = len(week_entries)
+    week_avg = (
+        sum(float(e.calories) for e in week_entries) / week_count
+        if week_count
+        else 0.0
+    )
 
     payload: dict = {
         "profile": None,
-        "latest_weight_lbs": float(latest_weight) if latest_weight else None,
+        "user_timezone": user_timezone,
+        "latest_weight_lbs": (
+            float(latest_measurement.body_weight_lbs) if latest_measurement else None
+        ),
+        "food_today": {
+            "entry_count": int(food_today["entry_count"]),
+            "calories": round(float(food_today["calories"]), 1),
+        },
         "food_log_last_7_days": {
-            "entry_count": int(entry_count),
-            "avg_calories_per_entry": round(float(avg_calories), 1),
+            "entry_count": week_count,
+            "avg_calories_per_entry": round(week_avg, 1),
         },
     }
 

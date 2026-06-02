@@ -1,6 +1,7 @@
 import { HttpAgent } from '@ag-ui/client'
 
 import { getBearerToken } from './authToken'
+import { todayIsoDate } from './nutritionTargets'
 
 export function createCoachHttpAgent(url: string) {
   return new HttpAgent({
@@ -14,6 +15,11 @@ export function createCoachHttpAgent(url: string) {
       }
 
       headers.set('Authorization', `Bearer ${token}`)
+      headers.set('X-User-Local-Date', todayIsoDate())
+      headers.set(
+        'X-User-Timezone',
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+      )
 
       return fetch(requestUrl, { ...init, headers })
     },

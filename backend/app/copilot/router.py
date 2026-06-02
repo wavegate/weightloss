@@ -7,6 +7,10 @@ from copilotkit.sdk import COPILOTKIT_SDK_VERSION
 
 from app.auth.clerk import get_current_user_id
 from app.services.coach_agent import get_weight_loss_coach_agui_agent
+from app.services.user_date import (
+    resolve_user_local_date_from_header,
+    resolve_user_timezone_from_header,
+)
 
 router = APIRouter(tags=["copilot"])
 
@@ -21,12 +25,18 @@ async def weight_loss_coach_ag_ui(
     accept_header = request.headers.get("accept")
     encoder = EventEncoder(accept=accept_header)
 
-    agent = get_weight_loss_coach_agui_agent().clone()
-    agent.config = {
-        "configurable": {
-            "user_id": user_id,
-        }
+    configurable: dict[str, str] = {
+        "user_id": user_id,
+        "user_local_date": resolve_user_local_date_from_header(
+            request.headers.get("x-user-local-date")
+        ).isoformat(),
+        "user_timezone": resolve_user_timezone_from_header(
+            request.headers.get("x-user-timezone")
+        ),
     }
+
+    agent = get_weight_loss_coach_agui_agent().clone()
+    agent.config = {"configurable": configurable}
 
     async def event_generator():
         async for event in agent.run(input_data):

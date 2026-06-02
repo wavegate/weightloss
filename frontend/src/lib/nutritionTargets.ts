@@ -14,8 +14,66 @@ export type MacroTotals = {
   fat_g: number
 }
 
+/** Local calendar date (YYYY-MM-DD), not UTC from toISOString(). */
 export function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function getUserTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
+/**
+ * Map a stored DB date to the user's local calendar day (mirrors backend logic).
+ * Legacy rows used UTC calendar dates; when stored is ahead of local today,
+ * reinterpret as UTC midnight in the browser's local timezone.
+ */
+export function effectiveFoodLocalDate(
+  storedIso: string,
+  localToday: string,
+): string {
+  if (storedIso <= localToday) {
+    return storedIso
+  }
+
+  const [y, m, d] = storedIso.split('-').map(Number)
+  const utcMs = Date.UTC(y, m - 1, d)
+  const local = new Date(utcMs)
+  const shifted = [
+    local.getFullYear(),
+    String(local.getMonth() + 1).padStart(2, '0'),
+    String(local.getDate()).padStart(2, '0'),
+  ].join('-')
+
+  if (shifted <= localToday) {
+    return shifted
+  }
+
+  return storedIso
+}
+
+export function sumFoodEntriesForLocalToday(
+  entries: FoodEntry[],
+  localToday: string = todayIsoDate(),
+): MacroTotals {
+  return entries
+    .filter(
+      (entry) =>
+        effectiveFoodLocalDate(entry.recorded_at, localToday) === localToday,
+    )
+    .reduce(
+      (acc, entry) => ({
+        calories: acc.calories + entry.calories,
+        protein_g: acc.protein_g + entry.protein_g,
+        carbs_g: acc.carbs_g + entry.carbs_g,
+        fat_g: acc.fat_g + entry.fat_g,
+      }),
+      { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
+    )
 }
 
 export function sumFoodEntriesForDate(

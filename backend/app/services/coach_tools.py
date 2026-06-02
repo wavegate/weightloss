@@ -4,12 +4,18 @@ from typing import Annotated
 
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg, tool
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from app.database import SessionLocal
 from app.models.body_measurement import BodyMeasurement
 from app.models.food_entry import FoodEntry
 from app.models.metabolic_profile import MetabolicProfile
+from app.services.food_dates import food_query_window, summarize_food_by_local_date
+from app.services.user_date import (
+    effective_local_calendar_date,
+    resolve_user_local_date,
+    resolve_user_timezone,
+)
 
 
 def _user_id(config: RunnableConfig) -> str:
@@ -30,8 +36,9 @@ def get_coach_context(
 ) -> str:
     """Load the user's weight-loss context: profile, measurements, food log, and reminders."""
     user_id = _user_id(config)
-    today = date.today()
-    week_ago = today - timedelta(days=7)
+    today = resolve_user_local_date(config)
+    user_timezone = resolve_user_timezone(config)
+    fetch_from = food_query_window(today)
 
     with SessionLocal() as db:
         profile = db.scalar(
@@ -46,46 +53,69 @@ def get_coach_context(
             )
             .limit(1)
         )
-        today_food = db.execute(
-            select(
-                func.count(FoodEntry.id),
-                func.coalesce(func.sum(FoodEntry.calories), 0),
-            ).where(
-                FoodEntry.user_id == user_id,
-                FoodEntry.recorded_at == today,
-            )
-        ).one()
-        week_food_stats = db.execute(
-            select(
-                func.count(FoodEntry.id),
-                func.coalesce(func.avg(FoodEntry.calories), 0),
-            ).where(
-                FoodEntry.user_id == user_id,
-                FoodEntry.recorded_at >= week_ago,
-            )
-        ).one()
+        food_entries = list(
+            db.scalars(
+                select(FoodEntry)
+                .where(
+                    FoodEntry.user_id == user_id,
+                    FoodEntry.recorded_at >= fetch_from,
+                )
+                .order_by(FoodEntry.recorded_at.desc(), FoodEntry.id.desc())
+            ).all()
+        )
 
-    today_count, today_calories = today_food
-    week_entry_count, week_avg_calories = week_food_stats
+    food_by_date, food_today = summarize_food_by_local_date(
+        food_entries,
+        user_local_today=today,
+        user_timezone=user_timezone,
+    )
 
-    latest_date = latest_measurement.recorded_at if latest_measurement else None
+    week_entries = [
+        row
+        for row in food_by_date
+        if date.fromisoformat(row["local_date"]) >= today - timedelta(days=7)
+    ]
+    week_entry_count = sum(int(row["entry_count"]) for row in week_entries)
+    week_calories = sum(float(row["calories"]) for row in week_entries)
+    week_avg_calories = (
+        round(week_calories / week_entry_count, 1) if week_entry_count else 0.0
+    )
+
+    latest_date = None
+    if latest_measurement:
+        latest_date = effective_local_calendar_date(
+            latest_measurement.recorded_at,
+            user_local_today=today,
+            user_timezone=user_timezone,
+        )
+
     needs_weekly_measurement = (
         latest_date is None or _iso_week(latest_date) != _iso_week(today)
     )
 
     payload: dict = {
+        "user_timezone": user_timezone,
         "today": today.isoformat(),
+        "today_note": (
+            "Food and measurements are grouped by calendar date in user_timezone. "
+            "DB recorded_at values may be reinterpreted from legacy UTC calendar dates."
+        ),
         "needs_weekly_measurement": needs_weekly_measurement,
         "latest_measurement": None,
         "metabolic_profile": None,
         "food_today": {
-            "entry_count": int(today_count),
-            "calories": round(float(today_calories), 1),
+            "entry_count": int(food_today["entry_count"]),
+            "calories": round(float(food_today["calories"]), 1),
+            "protein_g": round(float(food_today["protein_g"]), 1),
+            "carbs_g": round(float(food_today["carbs_g"]), 1),
+            "fat_g": round(float(food_today["fat_g"]), 1),
         },
         "food_log_last_7_days": {
-            "entry_count": int(week_entry_count),
-            "avg_calories_per_entry": round(float(week_avg_calories), 1),
+            "entry_count": week_entry_count,
+            "avg_calories_per_entry": week_avg_calories,
+            "total_calories": round(week_calories, 1),
         },
+        "food_log_by_local_date": food_by_date,
         "app_pages": {
             "measurements": "/measurements — log body weight",
             "food": "/food — food log and daily calorie summary",
@@ -98,7 +128,8 @@ def get_coach_context(
 
     if latest_measurement:
         payload["latest_measurement"] = {
-            "recorded_at": latest_measurement.recorded_at.isoformat(),
+            "recorded_at_stored": latest_measurement.recorded_at.isoformat(),
+            "recorded_at_local": latest_date.isoformat() if latest_date else None,
             "body_weight_lbs": float(latest_measurement.body_weight_lbs),
         }
 

@@ -5,7 +5,7 @@ import { useMetabolicProfile } from '../hooks/useMetabolicProfile'
 import {
   formatMacroDelta,
   macroTargetsFromTdee,
-  sumFoodEntriesForDate,
+  sumFoodEntriesForLocalToday,
   todayIsoDate,
 } from '../lib/nutritionTargets'
 import { MacroBreakdownChart } from './MacroBreakdownChart'
@@ -91,7 +91,7 @@ export function DailyNutritionSummary() {
     )
   }
 
-  const consumed = sumFoodEntriesForDate(foodsQuery.data ?? [], today)
+  const consumed = sumFoodEntriesForLocalToday(foodsQuery.data ?? [], today)
   const targets = macroTargetsFromTdee(tdee)
   const caloriesRemaining = Math.round(targets.calories - consumed.calories)
   const calorieProgress = Math.min(

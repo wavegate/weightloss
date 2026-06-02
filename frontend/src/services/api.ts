@@ -1,4 +1,5 @@
 import { getBearerToken } from '../lib/authToken'
+import { getUserTimezone, todayIsoDate } from '../lib/nutritionTargets'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
@@ -24,6 +25,9 @@ async function buildHeaders(includeJson: boolean): Promise<HeadersInit> {
   if (token) {
     headers.Authorization = `Bearer ${token}`
   }
+
+  headers['X-User-Local-Date'] = todayIsoDate()
+  headers['X-User-Timezone'] = getUserTimezone()
 
   return headers
 }
