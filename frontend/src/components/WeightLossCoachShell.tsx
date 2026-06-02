@@ -4,6 +4,7 @@ import { CopilotChat } from '@copilotkit/react-ui'
 import '@copilotkit/react-ui/styles.css'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
+import { getBackendUrl } from '../lib/backendUrl'
 import { getBearerToken } from '../lib/authToken'
 import {
   createCoachHttpAgent,
@@ -12,10 +13,7 @@ import {
 import { CoachNavigationTools } from './CoachNavigationTools'
 import { CoachQuerySync } from './CoachQuerySync'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
-
-const COACH_AGENT_URL = `${API_BASE_URL}/copilotkit/ag-ui`
+const COACH_AGENT_URL = `${getBackendUrl()}/copilotkit/ag-ui`
 
 const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
   .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined

@@ -1,0 +1,14 @@
+[Unit]
+Description=Weightloss FastAPI
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/weightloss/backend
+EnvironmentFile=/home/ubuntu/weightloss/backend/.env
+ExecStart=/home/ubuntu/weightloss/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

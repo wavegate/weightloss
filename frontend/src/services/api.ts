@@ -1,8 +1,8 @@
+import { getBackendUrl } from '../lib/backendUrl'
 import { getBearerToken } from '../lib/authToken'
 import { getUserTimezone, todayIsoDate } from '../lib/nutritionTargets'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
+const API_BASE_URL = getBackendUrl()
 
 export class ApiError extends Error {
   status: number
