@@ -1,15 +1,12 @@
 import { useForm } from 'react-hook-form'
 
 import { useCreateFoodMutation } from '../hooks/useFoods'
+import { todayIsoDate } from '../lib/nutritionTargets'
 
 type FoodFormValues = {
   recorded_at: string
   name: string
   description: string
-}
-
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export function FoodForm() {
