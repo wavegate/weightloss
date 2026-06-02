@@ -1,6 +1,8 @@
 import { HttpAgent } from '@ag-ui/client'
 
 import { getBearerToken } from './authToken'
+
+export const WEIGHT_LOSS_COACH_AGENT_ID = 'weight_loss_coach'
 import { todayIsoDate } from './nutritionTargets'
 
 export function createCoachHttpAgent(url: string) {

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 import { useFoodsQuery } from '../hooks/useFoods'
 import { useMetabolicProfile } from '../hooks/useMetabolicProfile'
+import { useWeightLossPlan } from '../hooks/useWeightLossPlan'
 import {
   formatMacroDelta,
   macroTargetsFromTdee,
@@ -51,9 +52,12 @@ export function DailyNutritionSummary() {
   const today = todayIsoDate()
   const foodsQuery = useFoodsQuery()
   const profileQuery = useMetabolicProfile()
+  const planQuery = useWeightLossPlan()
 
-  const isLoading = foodsQuery.isLoading || profileQuery.isLoading
-  const isError = foodsQuery.isError || profileQuery.isError
+  const isLoading =
+    foodsQuery.isLoading || profileQuery.isLoading || planQuery.isLoading
+  const isError =
+    foodsQuery.isError || profileQuery.isError || planQuery.isError
 
   if (isLoading) {
     return <p className="text-slate-400">Loading today&apos;s nutrition…</p>
@@ -72,9 +76,11 @@ export function DailyNutritionSummary() {
   }
 
   const profile = profileQuery.data
-  const tdee = profile?.tdee_kcal
+  const plan = planQuery.data
+  const calorieBudget =
+    plan?.daily_calorie_target ?? profile?.tdee_kcal ?? null
 
-  if (!tdee) {
+  if (!calorieBudget) {
     return (
       <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/40 p-4">
         <p className="text-sm text-slate-300">
@@ -92,7 +98,10 @@ export function DailyNutritionSummary() {
   }
 
   const consumed = sumFoodEntriesForLocalToday(foodsQuery.data ?? [], today)
-  const targets = macroTargetsFromTdee(tdee)
+  const targets = macroTargetsFromTdee(calorieBudget)
+  const budgetLabel = plan
+    ? `${Math.round(plan.daily_calorie_target).toLocaleString()} kcal (plan)`
+    : `${Math.round(calorieBudget).toLocaleString()} kcal (TDEE)`
   const caloriesRemaining = Math.round(targets.calories - consumed.calories)
   const calorieProgress = Math.min(
     100,
@@ -121,9 +130,14 @@ export function DailyNutritionSummary() {
               : `${caloriesRemaining.toLocaleString()} kcal left`}
           </p>
           <p className="text-sm text-slate-400">
-            {Math.round(consumed.calories).toLocaleString()} /{' '}
-            {Math.round(targets.calories).toLocaleString()} kcal (TDEE)
+            {Math.round(consumed.calories).toLocaleString()} / {budgetLabel}
           </p>
+          {plan ? (
+            <p className="mt-1 text-xs text-slate-500">
+              {Math.round(plan.daily_deficit_kcal)} kcal/day deficit · goal{' '}
+              {plan.target_weight_lbs} lb by {plan.target_date}
+            </p>
+          ) : null}
         </div>
         <div
           className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800"
@@ -177,7 +191,7 @@ export function DailyNutritionSummary() {
         </div>
         <p className="mt-3 text-xs text-slate-500">
           Macro targets use a 30% protein / 40% carbs / 30% fat split of your
-          TDEE.
+          {plan ? ' daily calorie plan target' : ' TDEE'}.
         </p>
       </div>
     </div>

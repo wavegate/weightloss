@@ -5,7 +5,11 @@ import '@copilotkit/react-ui/styles.css'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { getBearerToken } from '../lib/authToken'
-import { createCoachHttpAgent } from '../lib/coachAgent'
+import {
+  createCoachHttpAgent,
+  WEIGHT_LOSS_COACH_AGENT_ID,
+} from '../lib/coachAgent'
+import { CoachHandoffIndicator } from './CoachHandoffIndicator'
 import { CoachNavigationTools } from './CoachNavigationTools'
 
 const API_BASE_URL =
@@ -15,8 +19,6 @@ const COACH_AGENT_URL = `${API_BASE_URL}/copilotkit/ag-ui`
 
 const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
   .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
-
-export const WEIGHT_LOSS_COACH_AGENT_ID = 'weight_loss_coach'
 
 type WeightLossCoachShellProps = {
   children: ReactNode
@@ -92,12 +94,13 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
           typeof CopilotKit
         >[0]['selfManagedAgents']
       }
-      threadId={userId}
+      threadId={`${userId}:coach-v3`}
       headers={authHeaders}
     >
       <CoachNavigationTools />
       <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
         <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
+          <CoachHandoffIndicator />
           <CopilotChat
             className="flex h-full min-h-0 flex-1 flex-col"
             labels={{
