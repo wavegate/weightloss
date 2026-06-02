@@ -1,3 +1,5 @@
+import { getBearerToken } from '../lib/authToken'
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
 
@@ -9,6 +11,21 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = status
   }
+}
+
+async function buildHeaders(includeJson: boolean): Promise<HeadersInit> {
+  const headers: Record<string, string> = {}
+
+  if (includeJson) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  const token = await getBearerToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  return headers
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -29,14 +46,16 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`)
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: await buildHeaders(false),
+  })
   return parseResponse<T>(response)
 }
 
 export async function apiPost<T, B>(path: string, body: B): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await buildHeaders(true),
     body: JSON.stringify(body),
   })
   return parseResponse<T>(response)

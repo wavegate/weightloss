@@ -1,3 +1,4 @@
+import { UserButton } from '@clerk/react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -13,7 +14,10 @@ export function Layout() {
     <div className="min-h-svh bg-slate-950 px-4 py-10 text-slate-100">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
         <header className="space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight">Weightloss</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-3xl font-semibold tracking-tight">Weightloss</h1>
+            <UserButton />
+          </div>
 
           <nav className="flex gap-2">
             <NavLink to="/measurements" className={navLinkClass}>

@@ -10,6 +10,7 @@ class FoodEntry(Base):
     __tablename__ = "food_entries"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     recorded_at: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)

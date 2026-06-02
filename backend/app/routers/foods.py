@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.clerk import CurrentUserId
 from app.database import get_db
 from app.models.food_entry import FoodEntry
 from app.schemas.food_entry import FoodEntryCreate, FoodEntryRead
@@ -13,10 +14,17 @@ router = APIRouter(prefix="/foods", tags=["foods"])
 
 
 @router.get("", response_model=list[FoodEntryRead])
-def list_food_entries(db: Session = Depends(get_db)) -> list[FoodEntry]:
-    stmt = select(FoodEntry).order_by(
-        FoodEntry.recorded_at.desc(),
-        FoodEntry.id.desc(),
+def list_food_entries(
+    db: Session = Depends(get_db),
+    user_id: str = CurrentUserId,
+) -> list[FoodEntry]:
+    stmt = (
+        select(FoodEntry)
+        .where(FoodEntry.user_id == user_id)
+        .order_by(
+            FoodEntry.recorded_at.desc(),
+            FoodEntry.id.desc(),
+        )
     )
     return list(db.scalars(stmt).all())
 
@@ -25,6 +33,7 @@ def list_food_entries(db: Session = Depends(get_db)) -> list[FoodEntry]:
 async def create_food_entry(
     payload: FoodEntryCreate,
     db: Session = Depends(get_db),
+    user_id: str = CurrentUserId,
 ) -> FoodEntry:
     try:
         estimate = await asyncio.to_thread(
@@ -39,6 +48,7 @@ async def create_food_entry(
         ) from exc
 
     entry = FoodEntry(
+        user_id=user_id,
         recorded_at=payload.recorded_at,
         name=payload.name,
         description=payload.description,

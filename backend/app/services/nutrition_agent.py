@@ -21,7 +21,8 @@ Be conservative when uncertain. Prefer USDA-style labels and reputable nutrition
 class NutritionEstimate(BaseModel):
     calories: float = Field(gt=0, description="Estimated calories (kcal)")
     protein_g: float = Field(ge=0, description="Estimated protein in grams")
-    carbs_g: float = Field(ge=0, description="Estimated carbohydrates in grams")
+    carbs_g: float = Field(
+        ge=0, description="Estimated carbohydrates in grams")
     fat_g: float = Field(ge=0, description="Estimated fat in grams")
     notes: str = Field(
         description="Brief note on how the estimate was derived and key assumptions"
