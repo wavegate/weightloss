@@ -11,11 +11,13 @@ from app.services.coach_prompts import WEIGHT_LOSS_COACH_SYSTEM_PROMPT
 from app.services.coach_tools import COACH_TOOLS
 from app.services.handoff_tools import (
     WeightLossAssistantState,
+    transfer_to_dietician_coach,
     transfer_to_metabolism_coach,
     transfer_to_weight_loss_coach,
 )
 from app.services.handoff_tools import METABOLISM_AGENT_NAME
 from app.services.metabolism_tools import METABOLISM_TOOLS
+from app.services.dietician_tools import DIETICIAN_TOOLS
 
 WEIGHT_LOSS_COACH_NAME = "weight_loss_coach"
 
@@ -27,7 +29,9 @@ WEIGHT_LOSS_COACH_DESCRIPTION = (
 _ALL_ASSISTANT_TOOLS = [
     *COACH_TOOLS,
     transfer_to_metabolism_coach,
+    transfer_to_dietician_coach,
     *METABOLISM_TOOLS,
+    *DIETICIAN_TOOLS,
     transfer_to_weight_loss_coach,
 ]
 

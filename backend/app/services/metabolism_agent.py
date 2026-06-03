@@ -10,6 +10,7 @@ from app.services.coach_prompts import METABOLISM_SYSTEM_PROMPT
 from app.services.handoff_tools import (
     METABOLISM_AGENT_NAME,
     WeightLossAssistantState,
+    transfer_to_dietician_coach,
     transfer_to_weight_loss_coach,
 )
 from app.services.metabolism_tools import METABOLISM_TOOLS
@@ -28,7 +29,7 @@ def build_metabolism_graph():
 
     return create_agent(
         model=f"openai:{settings.openai_model}",
-        tools=[*METABOLISM_TOOLS, transfer_to_weight_loss_coach],
+        tools=[*METABOLISM_TOOLS, transfer_to_dietician_coach, transfer_to_weight_loss_coach],
         system_prompt=METABOLISM_SYSTEM_PROMPT,
         state_schema=WeightLossAssistantState,
         checkpointer=MemorySaver(),

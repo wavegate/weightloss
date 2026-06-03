@@ -11,7 +11,8 @@ from langchain.agents import AgentState
 
 WEIGHT_LOSS_COACH_AGENT = "weight_loss_coach"
 METABOLISM_AGENT_NAME = "metabolism_coach"
-ActiveAgent = Literal["weight_loss_coach", "metabolism_coach"]
+DIETICIAN_AGENT_NAME = "dietician_coach"
+ActiveAgent = Literal["weight_loss_coach", "metabolism_coach", "dietician_coach"]
 
 
 class WeightLossAssistantState(AgentState):
@@ -48,14 +49,40 @@ def transfer_to_metabolism_coach(
 
 
 @tool
+def transfer_to_dietician_coach(
+    reason: str,
+    runtime: ToolRuntime[None, WeightLossAssistantState],
+) -> Command:
+    """Hand off to the dietician coach (multi-turn).
+
+    Use for food log updates, meal planning, diet suggestions, hunger/symptom check-ins,
+    recipes, and nutrition coaching. The dietician will talk to the user directly.
+    """
+    return Command(
+        update={
+            "active_agent": DIETICIAN_AGENT_NAME,
+            "messages": [
+                ToolMessage(
+                    content=(
+                        f"Now speaking as the dietician coach. {reason} "
+                        "Ask the user one question at a time when gathering details."
+                    ),
+                    tool_call_id=runtime.tool_call_id,
+                )
+            ],
+        }
+    )
+
+
+@tool
 def transfer_to_weight_loss_coach(
     reason: str,
     runtime: ToolRuntime[None, WeightLossAssistantState],
 ) -> Command:
     """Hand back to the main weight loss coach.
 
-    Use after metabolic profile or weight-loss plan work is complete, or when the
-    user wants help with food logging, measurements, or general app guidance.
+    Use after metabolic profile, weight-loss plan, or diet coaching work is complete,
+    or when the user wants help with measurements or general app guidance.
     """
     return Command(
         update={

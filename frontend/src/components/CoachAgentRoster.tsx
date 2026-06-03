@@ -3,7 +3,10 @@ import { useCallback, useState } from 'react'
 
 import { WEIGHT_LOSS_COACH_AGENT_ID } from '../lib/coachAgent'
 
-export type ActiveCoachAgent = 'weight_loss_coach' | 'metabolism_coach'
+export type ActiveCoachAgent =
+  | 'weight_loss_coach'
+  | 'metabolism_coach'
+  | 'dietician_coach'
 
 type AssistantState = {
   active_agent?: ActiveCoachAgent
@@ -19,10 +22,18 @@ const ROSTER: {
   {
     id: 'weight_loss_coach',
     name: 'Coach',
-    role: 'Food, weight & app',
+    role: 'Weight & app',
     avatar: '🎯',
     handoffMessage:
       'Please hand me back to the main weight loss coach using transfer_to_weight_loss_coach.',
+  },
+  {
+    id: 'dietician_coach',
+    name: 'Dietician',
+    role: 'Food log & diet',
+    avatar: '🥗',
+    handoffMessage:
+      'Please transfer me to the dietician coach using transfer_to_dietician_coach. I want help with my food log, meals, or nutrition.',
   },
   {
     id: 'metabolism_coach',
@@ -34,6 +45,16 @@ const ROSTER: {
   },
 ]
 
+function resolveActiveAgent(state: AssistantState | undefined): ActiveCoachAgent {
+  if (state?.active_agent === 'metabolism_coach') {
+    return 'metabolism_coach'
+  }
+  if (state?.active_agent === 'dietician_coach') {
+    return 'dietician_coach'
+  }
+  return 'weight_loss_coach'
+}
+
 export function CoachAgentRoster() {
   const { state, running } = useCoAgent<AssistantState>({
     name: WEIGHT_LOSS_COACH_AGENT_ID,
@@ -43,10 +64,7 @@ export function CoachAgentRoster() {
     null,
   )
 
-  const active: ActiveCoachAgent =
-    state?.active_agent === 'metabolism_coach'
-      ? 'metabolism_coach'
-      : 'weight_loss_coach'
+  const active = resolveActiveAgent(state)
 
   const isBusy = running || isLoading || handoffTarget !== null
 
@@ -77,7 +95,7 @@ export function CoachAgentRoster() {
 
   return (
     <div
-      className="flex items-end justify-center gap-6 sm:gap-10"
+      className="flex items-end justify-center gap-4 sm:gap-8"
       aria-label="Assistant agents"
     >
       {ROSTER.map((agent) => {

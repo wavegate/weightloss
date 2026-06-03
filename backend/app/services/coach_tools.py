@@ -133,6 +133,10 @@ def get_coach_context(
                 "Call transfer_to_metabolism_coach for BMR/TDEE, profile, "
                 "timelines, plan preview, and save_weight_loss_plan."
             ),
+            "dietician_coach": (
+                "Call transfer_to_dietician_coach for food log updates, diet coaching, "
+                "meal ideas, hunger check-ins, and nutrition summaries."
+            ),
         },
         "active_agent": None,
     }
