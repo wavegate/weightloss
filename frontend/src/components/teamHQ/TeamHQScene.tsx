@@ -1,9 +1,16 @@
-import { Html, OrbitControls } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 
 import { useCoachHandoff } from '../../hooks/useCoachHandoff'
-import type { CoachNpc } from '../../lib/coachNpcRoster'
+import { useCoachSpeechBubble } from '../../hooks/useCoachSpeechBubble'
+import {
+  getNpcWorldPosition,
+  type CoachNpc,
+  type CoachNpcLayout,
+} from '../../lib/coachNpcRoster'
+import { CameraFocusControls } from './CameraFocusControls'
 import { NpcCharacter } from './NpcCharacter'
+import { NpcSpeechBubble } from './NpcSpeechBubble'
 
 type TeamHQSceneProps = {
   layout?: 'strip' | 'room'
@@ -14,6 +21,42 @@ type NpcLabelProps = {
   isActive: boolean
   isPending: boolean
   compact: boolean
+}
+
+type NpcSpeechBubbleAnchorProps = {
+  isActive: boolean
+  speech: {
+    showBubble: boolean
+    displayText: string | null
+    isTyping: boolean
+    isSpeaking: boolean
+  }
+  compact: boolean
+}
+
+function NpcSpeechBubbleAnchor({
+  isActive,
+  speech,
+  compact,
+}: NpcSpeechBubbleAnchorProps) {
+  if (!isActive || !speech.showBubble) {
+    return null
+  }
+
+  return (
+    <Html
+      position={[0, compact ? 2.05 : 2.35, 0]}
+      center
+      distanceFactor={compact ? 11 : 8}
+      style={{ pointerEvents: 'auto', userSelect: 'text' }}
+    >
+      <NpcSpeechBubble
+        text={speech.displayText}
+        isTyping={speech.isTyping}
+        isSpeaking={speech.isSpeaking}
+      />
+    </Html>
+  )
 }
 
 function NpcLabel({ npc, isActive, isPending, compact }: NpcLabelProps) {
@@ -35,9 +78,7 @@ function NpcLabel({ npc, isActive, isPending, compact }: NpcLabelProps) {
         {!compact ? (
           <span className="text-xs text-slate-400">{npc.role}</span>
         ) : null}
-        {isActive ? (
-          <span className="text-[10px] font-medium text-violet-400">Speaking</span>
-        ) : isPending ? (
+        {isPending ? (
           <span className="text-[10px] font-medium text-violet-400">Connecting…</span>
         ) : null}
       </div>
@@ -45,23 +86,9 @@ function NpcLabel({ npc, isActive, isPending, compact }: NpcLabelProps) {
   )
 }
 
-function npcPosition(
-  npc: CoachNpc,
-  layout: 'strip' | 'room',
-): [number, number, number] {
-  if (layout === 'room') {
-    return npc.position
-  }
-  const spread: Record<CoachNpc['id'], number> = {
-    weight_loss_coach: -3.8,
-    dietician_coach: 0,
-    metabolism_coach: 3.8,
-  }
-  return [spread[npc.id], 0, 0]
-}
-
-function SceneContent({ layout }: { layout: 'strip' | 'room' }) {
+function SceneContent({ layout }: { layout: CoachNpcLayout }) {
   const { roster, active, handoffTarget, isBusy, requestHandoff } = useCoachHandoff()
+  const speech = useCoachSpeechBubble()
   const compact = layout === 'strip'
 
   return (
@@ -82,7 +109,7 @@ function SceneContent({ layout }: { layout: 'strip' | 'room' }) {
         const isClickable = !isActive && !isBusy
 
         return (
-          <group key={npc.id} position={npcPosition(npc, layout)}>
+          <group key={npc.id} position={getNpcWorldPosition(npc.id, layout)}>
             <NpcCharacter
               shape={npc.shape}
               color={npc.color}
@@ -90,6 +117,11 @@ function SceneContent({ layout }: { layout: 'strip' | 'room' }) {
               isPending={isPending}
               isClickable={isClickable}
               onSelect={() => void requestHandoff(npc.id)}
+            />
+            <NpcSpeechBubbleAnchor
+              isActive={isActive}
+              speech={speech}
+              compact={compact}
             />
             <NpcLabel
               npc={npc}
@@ -101,14 +133,7 @@ function SceneContent({ layout }: { layout: 'strip' | 'room' }) {
         )
       })}
 
-      <OrbitControls
-        enablePan={false}
-        minPolarAngle={compact ? Math.PI / 3.2 : Math.PI / 4}
-        maxPolarAngle={compact ? Math.PI / 2.05 : Math.PI / 2.2}
-        minDistance={compact ? 5.5 : 5}
-        maxDistance={compact ? 11 : 10}
-        target={[0, compact ? 0.75 : 0.8, 0]}
-      />
+      <CameraFocusControls layout={layout} compact={compact} />
     </>
   )
 }
