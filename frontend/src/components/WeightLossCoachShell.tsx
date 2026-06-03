@@ -9,15 +9,38 @@ import {
   createCoachHttpAgent,
   WEIGHT_LOSS_COACH_AGENT_ID,
 } from '../lib/coachAgent'
-import { CoachAgentRoster } from './CoachAgentRoster'
+import { CollapsibleSidebar } from './CollapsibleSidebar'
+import { CoachTeamStage } from './teamHQ/CoachTeamStage'
 import { CoachNavigationTools } from './CoachNavigationTools'
 import { CoachQuerySync } from './CoachQuerySync'
 
 const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
   .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
 
+const CHAT_PANEL_KEY = 'weightloss:panel-chat-open'
+const APP_PANEL_KEY = 'weightloss:panel-app-open'
+
 type WeightLossCoachShellProps = {
   children: ReactNode
+}
+
+function ThreeColumnChrome({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
+      {children}
+    </div>
+  )
+}
+
+function CoachTeamStagePlaceholder() {
+  return (
+    <section
+      aria-hidden
+      className="flex h-full min-h-0 flex-1 items-center justify-center bg-slate-950 text-sm text-slate-500"
+    >
+      Loading your team…
+    </section>
+  )
 }
 
 export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
@@ -71,14 +94,17 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
 
   if (!hasToken || !selfManagedAgents) {
     return (
-      <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
-        <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
+      <ThreeColumnChrome>
+        <aside className="weightLossCoachPanel flex h-full w-80 max-w-[min(100vw,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
           <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-6 text-slate-400">
             Connecting to your weight loss assistant…
           </div>
         </aside>
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
-      </div>
+        <CoachTeamStagePlaceholder />
+        <aside className="flex h-full w-80 max-w-[min(100vw,28rem)] shrink-0 flex-col overflow-hidden border-l border-slate-800 bg-slate-900">
+          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        </aside>
+      </ThreeColumnChrome>
     )
   }
 
@@ -98,23 +124,39 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
     >
       <CoachNavigationTools />
       <CoachQuerySync />
-      <div className="flex h-svh max-h-svh overflow-hidden bg-slate-950 text-slate-100">
-        <aside className="weightLossCoachPanel flex h-full max-h-svh w-[min(100%,28rem)] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900">
-          <div className="border-b border-slate-800 px-4 py-4">
-            <CoachAgentRoster />
-          </div>
-          <CopilotChat
-            className="flex h-full min-h-0 flex-1 flex-col"
-            labels={{
-              title: 'Weight loss coach',
-              initial:
-                "Hi! I'm your weight loss assistant. I can help you log weight and food, check your metabolism, and set calorie targets.\n\nHow can I help today?",
-              placeholder: 'Ask me anything…',
-            }}
-          />
-        </aside>
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
-      </div>
+      <ThreeColumnChrome>
+        <CollapsibleSidebar
+          side="left"
+          label="Chat"
+          storageKey={CHAT_PANEL_KEY}
+          expandedWidthClass="w-[min(100vw,26rem)] sm:w-96"
+        >
+          <aside className="weightLossCoachPanel flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+            <CopilotChat
+              className="flex h-full min-h-0 flex-1 flex-col"
+              labels={{
+                title: 'Weight loss coach',
+                initial:
+                  "Hi! I'm your weight loss assistant. I can help you log weight and food, check your metabolism, and set calorie targets.\n\nHow can I help today?",
+                placeholder: 'Ask me anything…',
+              }}
+            />
+          </aside>
+        </CollapsibleSidebar>
+
+        <main className="relative min-h-0 min-w-0 flex-1">
+          <CoachTeamStage />
+        </main>
+
+        <CollapsibleSidebar
+          side="right"
+          label="App"
+          storageKey={APP_PANEL_KEY}
+          expandedWidthClass="w-[min(100vw,26rem)] sm:w-[28rem]"
+        >
+          <div className="flex h-full min-h-0 flex-col overflow-hidden">{children}</div>
+        </CollapsibleSidebar>
+      </ThreeColumnChrome>
     </CopilotKit>
   )
 }
