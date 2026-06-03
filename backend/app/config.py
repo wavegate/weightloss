@@ -101,6 +101,8 @@ class Settings:
             frontend_url,
             _env_optional("CORS_ORIGINS"),
         )
+        self.elevenlabs_api_key = _env_optional("ELEVENLABS_API_KEY")
+        self.elevenlabs_voice_id = _env_optional("VOICE_ID")
 
     def _credentials(self) -> str:
         return (

@@ -1,8 +1,8 @@
 import { Html } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 
+import { useCoachVoice } from '../CoachVoiceContext'
 import { useCoachHandoff } from '../../hooks/useCoachHandoff'
-import { useCoachSpeechBubble } from '../../hooks/useCoachSpeechBubble'
 import {
   getNpcWorldPosition,
   type CoachNpc,
@@ -25,21 +25,30 @@ type NpcLabelProps = {
 
 type NpcSpeechBubbleAnchorProps = {
   isActive: boolean
-  speech: {
-    showBubble: boolean
-    displayText: string | null
-    isTyping: boolean
-    isSpeaking: boolean
+  showBubble: boolean
+  displayText: string | null
+  isTyping: boolean
+  isSpeaking: boolean
+  voice: {
+    canPlay: boolean
+    onPlay: () => void
+    onStop: () => void
+    isLoading: boolean
+    isPlaying: boolean
   }
   compact: boolean
 }
 
 function NpcSpeechBubbleAnchor({
   isActive,
-  speech,
+  showBubble,
+  displayText,
+  isTyping,
+  isSpeaking,
+  voice,
   compact,
 }: NpcSpeechBubbleAnchorProps) {
-  if (!isActive || !speech.showBubble) {
+  if (!isActive || !showBubble) {
     return null
   }
 
@@ -48,12 +57,14 @@ function NpcSpeechBubbleAnchor({
       position={[0, compact ? 2.05 : 2.35, 0]}
       center
       distanceFactor={compact ? 11 : 8}
+      zIndexRange={[100, 0]}
       style={{ pointerEvents: 'auto', userSelect: 'text' }}
     >
       <NpcSpeechBubble
-        text={speech.displayText}
-        isTyping={speech.isTyping}
-        isSpeaking={speech.isSpeaking}
+        text={displayText}
+        isTyping={isTyping}
+        isSpeaking={isSpeaking}
+        voice={voice}
       />
     </Html>
   )
@@ -88,8 +99,26 @@ function NpcLabel({ npc, isActive, isPending, compact }: NpcLabelProps) {
 
 function SceneContent({ layout }: { layout: CoachNpcLayout }) {
   const { roster, active, handoffTarget, isBusy, requestHandoff } = useCoachHandoff()
-  const speech = useCoachSpeechBubble()
+  const {
+    showBubble,
+    displayText,
+    isTyping,
+    isSpeaking,
+    canPlay,
+    playReply,
+    stopReply,
+    isLoading: voiceLoading,
+    isPlaying,
+  } = useCoachVoice()
   const compact = layout === 'strip'
+
+  const voiceControls = {
+    canPlay,
+    onPlay: playReply,
+    onStop: stopReply,
+    isLoading: voiceLoading,
+    isPlaying,
+  }
 
   return (
     <>
@@ -120,7 +149,11 @@ function SceneContent({ layout }: { layout: CoachNpcLayout }) {
             />
             <NpcSpeechBubbleAnchor
               isActive={isActive}
-              speech={speech}
+              showBubble={showBubble}
+              displayText={displayText}
+              isTyping={isTyping}
+              isSpeaking={isSpeaking}
+              voice={voiceControls}
               compact={compact}
             />
             <NpcLabel

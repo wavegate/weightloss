@@ -11,6 +11,8 @@ import {
 } from '../lib/coachAgent'
 import { CollapsibleSidebar } from './CollapsibleSidebar'
 import { CoachTeamStage } from './teamHQ/CoachTeamStage'
+import { CoachVoiceProvider } from './CoachVoiceContext'
+import { CoachVoicePlayButton } from './CoachVoicePlayButton'
 import { CoachNavigationTools } from './CoachNavigationTools'
 import { CoachQuerySync } from './CoachQuerySync'
 
@@ -124,6 +126,7 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
     >
       <CoachNavigationTools />
       <CoachQuerySync />
+      <CoachVoiceProvider>
       <ThreeColumnChrome>
         <CollapsibleSidebar
           side="left"
@@ -132,6 +135,10 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
           expandedWidthClass="w-[min(100vw,26rem)] sm:w-96"
         >
           <aside className="weightLossCoachPanel flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
+              <span className="text-xs text-slate-400">Latest reply</span>
+              <CoachVoicePlayButton />
+            </div>
             <CopilotChat
               className="flex h-full min-h-0 flex-1 flex-col"
               labels={{
@@ -157,6 +164,7 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
           <div className="flex h-full min-h-0 flex-col overflow-hidden">{children}</div>
         </CollapsibleSidebar>
       </ThreeColumnChrome>
+      </CoachVoiceProvider>
     </CopilotKit>
   )
 }

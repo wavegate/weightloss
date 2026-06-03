@@ -56,14 +56,38 @@ export function effectiveFoodLocalDate(
   return storedIso
 }
 
-export function sumFoodEntriesForLocalToday(
+function formatIsoFromLocalDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function addDays(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  date.setDate(date.getDate() + days)
+  return formatIsoFromLocalDate(date)
+}
+
+/** Inclusive range of `count` local calendar days ending on `endDate`. */
+export function lastNDaysIso(endDate: string, count: number): string[] {
+  const dates: string[] = []
+  for (let offset = count - 1; offset >= 0; offset -= 1) {
+    dates.push(addDays(endDate, -offset))
+  }
+  return dates
+}
+
+export function sumFoodEntriesForLocalDate(
   entries: FoodEntry[],
+  localDate: string,
   localToday: string = todayIsoDate(),
 ): MacroTotals {
   return entries
     .filter(
       (entry) =>
-        effectiveFoodLocalDate(entry.recorded_at, localToday) === localToday,
+        effectiveFoodLocalDate(entry.recorded_at, localToday) === localDate,
     )
     .reduce(
       (acc, entry) => ({
@@ -74,6 +98,13 @@ export function sumFoodEntriesForLocalToday(
       }),
       { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
     )
+}
+
+export function sumFoodEntriesForLocalToday(
+  entries: FoodEntry[],
+  localToday: string = todayIsoDate(),
+): MacroTotals {
+  return sumFoodEntriesForLocalDate(entries, localToday, localToday)
 }
 
 export function sumFoodEntriesForDate(

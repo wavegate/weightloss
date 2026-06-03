@@ -6,12 +6,12 @@ import { useWeightLossPlan } from '../hooks/useWeightLossPlan'
 import {
   formatMacroDelta,
   macroTargetsFromTdee,
-  sumFoodEntriesForLocalToday,
+  sumFoodEntriesForLocalDate,
   todayIsoDate,
 } from '../lib/nutritionTargets'
 import { MacroBreakdownChart } from './MacroBreakdownChart'
 
-function formatTodayHeading(isoDate: string): string {
+function formatDayHeading(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
   return new Date(year, month - 1, day).toLocaleDateString(undefined, {
     weekday: 'long',
@@ -19,6 +19,10 @@ function formatTodayHeading(isoDate: string): string {
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+type DailyNutritionSummaryProps = {
+  selectedDate: string
 }
 
 function MacroStat({
@@ -48,8 +52,9 @@ function MacroStat({
   )
 }
 
-export function DailyNutritionSummary() {
+export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryProps) {
   const today = todayIsoDate()
+  const isToday = selectedDate === today
   const foodsQuery = useFoodsQuery()
   const profileQuery = useMetabolicProfile()
   const planQuery = useWeightLossPlan()
@@ -60,7 +65,11 @@ export function DailyNutritionSummary() {
     foodsQuery.isError || profileQuery.isError || planQuery.isError
 
   if (isLoading) {
-    return <p className="text-slate-400">Loading today&apos;s nutrition…</p>
+    return (
+      <p className="text-slate-400">
+        {isToday ? "Loading today's nutrition…" : 'Loading nutrition…'}
+      </p>
+    )
   }
 
   if (isError) {
@@ -97,7 +106,11 @@ export function DailyNutritionSummary() {
     )
   }
 
-  const consumed = sumFoodEntriesForLocalToday(foodsQuery.data ?? [], today)
+  const consumed = sumFoodEntriesForLocalDate(
+    foodsQuery.data ?? [],
+    selectedDate,
+    today,
+  )
   const targets = macroTargetsFromTdee(calorieBudget)
   const budgetLabel = plan
     ? `${Math.round(plan.daily_calorie_target).toLocaleString()} kcal (plan)`
@@ -113,9 +126,11 @@ export function DailyNutritionSummary() {
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Today
+          {isToday ? 'Today' : 'Day'}
         </p>
-        <p className="mt-1 text-sm text-slate-300">{formatTodayHeading(today)}</p>
+        <p className="mt-1 text-sm text-slate-300">
+          {formatDayHeading(selectedDate)}
+        </p>
       </div>
 
       <div>
@@ -145,7 +160,9 @@ export function DailyNutritionSummary() {
           aria-valuenow={Math.round(consumed.calories)}
           aria-valuemin={0}
           aria-valuemax={Math.round(targets.calories)}
-          aria-label="Calories consumed today"
+          aria-label={
+            isToday ? 'Calories consumed today' : 'Calories consumed on selected day'
+          }
         >
           <div
             className={`h-full rounded-full transition-all ${
