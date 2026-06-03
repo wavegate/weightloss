@@ -6,6 +6,7 @@ import { RequireAuth } from './components/RequireAuth'
 import { FoodLogPage } from './pages/FoodLogPage'
 import { MeasurementsPage } from './pages/MeasurementsPage'
 import { MetabolismPage } from './pages/MetabolismPage'
+import { VisionPage } from './pages/VisionPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 
@@ -28,6 +29,7 @@ function App() {
             <Route path="measurements" element={<MeasurementsPage />} />
             <Route path="food" element={<FoodLogPage />} />
             <Route path="metabolism" element={<MetabolismPage />} />
+            <Route path="vision" element={<VisionPage />} />
           </Route>
         </Route>
       </Routes>

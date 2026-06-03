@@ -32,6 +32,9 @@ export function Layout() {
               <NavLink to="/metabolism" className={navLinkClass}>
                 Metabolism
               </NavLink>
+              <NavLink to="/vision" className={navLinkClass}>
+                Goal preview
+              </NavLink>
             </nav>
           </header>
 
