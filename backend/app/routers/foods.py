@@ -120,6 +120,7 @@ async def create_food_entry(
         protein_g=estimate.protein_g,
         carbs_g=estimate.carbs_g,
         fat_g=estimate.fat_g,
+        fiber_g=estimate.fiber_g,
         estimation_notes=estimate.notes,
     )
     db.add(entry)

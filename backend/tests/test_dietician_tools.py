@@ -33,6 +33,7 @@ def test_serialize_food_entry_includes_local_date() -> None:
     entry.protein_g = 12.0
     entry.carbs_g = 55.0
     entry.fat_g = 8.0
+    entry.fiber_g = 6.0
     entry.estimation_notes = "Estimated from USDA"
 
     payload = _serialize_food_entry(entry, local_date=date(2026, 6, 1))

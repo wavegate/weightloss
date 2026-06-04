@@ -39,6 +39,8 @@ function FoodRow({
         C {formatMacro(entry.carbs_g)}g
         <br />
         F {formatMacro(entry.fat_g)}g
+        <br />
+        Fi {formatMacro(entry.fiber_g)}g
       </td>
       <td className="px-3 py-3 text-right">
         <button

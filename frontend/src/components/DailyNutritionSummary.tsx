@@ -182,14 +182,16 @@ export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryPro
             protein_g: consumed.protein_g,
             carbs_g: consumed.carbs_g,
             fat_g: consumed.fat_g,
+            fiber_g: consumed.fiber_g,
           }}
           targets={{
             protein_g: targets.protein_g,
             carbs_g: targets.carbs_g,
             fat_g: targets.fat_g,
+            fiber_g: targets.fiber_g,
           }}
         />
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <MacroStat
             label="Protein"
             consumed={consumed.protein_g}
@@ -205,10 +207,16 @@ export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryPro
             consumed={consumed.fat_g}
             target={targets.fat_g}
           />
+          <MacroStat
+            label="Fiber"
+            consumed={consumed.fiber_g}
+            target={targets.fiber_g}
+          />
         </div>
         <p className="mt-3 text-xs text-slate-500">
           Macro targets use a 30% protein / 40% carbs / 30% fat split of your
-          {plan ? ' daily calorie plan target' : ' TDEE'}.
+          {plan ? ' daily calorie plan target' : ' TDEE'}. Fiber target is{' '}
+          {targets.fiber_g}g/day (general guideline).
         </p>
       </div>
     </div>

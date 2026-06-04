@@ -36,6 +36,9 @@ export function WeeklyNutritionChart({ days }: WeeklyNutritionChartProps) {
   )
   const carbsRemaining = days.map((d) => d.targets.carbs_g - d.consumed.carbs_g)
   const fatRemaining = days.map((d) => d.targets.fat_g - d.consumed.fat_g)
+  const fiberRemaining = days.map(
+    (d) => d.targets.fiber_g - d.consumed.fiber_g,
+  )
 
   const calorieTrace: Partial<PlotData> = {
     type: 'bar',
@@ -163,6 +166,7 @@ export function WeeklyNutritionChart({ days }: WeeklyNutritionChartProps) {
             macroRemainingTrace('Protein', proteinRemaining, '#a78bfa'),
             macroRemainingTrace('Carbs', carbsRemaining, '#38bdf8'),
             macroRemainingTrace('Fat', fatRemaining, '#fbbf24'),
+            macroRemainingTrace('Fiber', fiberRemaining, '#34d399'),
           ]}
           layout={macroLayout}
           config={{ displayModeBar: false, responsive: true }}

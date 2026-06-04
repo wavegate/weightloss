@@ -12,7 +12,11 @@ export type MacroTotals = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
 }
+
+/** General daily fiber guideline (grams); not tied to calorie budget. */
+export const DAILY_FIBER_TARGET_G = 25
 
 /** Local calendar date (YYYY-MM-DD), not UTC from toISOString(). */
 export function todayIsoDate(): string {
@@ -95,8 +99,9 @@ export function sumFoodEntriesForLocalDate(
         protein_g: acc.protein_g + entry.protein_g,
         carbs_g: acc.carbs_g + entry.carbs_g,
         fat_g: acc.fat_g + entry.fat_g,
+        fiber_g: acc.fiber_g + entry.fiber_g,
       }),
-      { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
+      { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 },
     )
 }
 
@@ -119,8 +124,9 @@ export function sumFoodEntriesForDate(
         protein_g: acc.protein_g + entry.protein_g,
         carbs_g: acc.carbs_g + entry.carbs_g,
         fat_g: acc.fat_g + entry.fat_g,
+        fiber_g: acc.fiber_g + entry.fiber_g,
       }),
-      { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
+      { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 },
     )
 }
 
@@ -130,6 +136,7 @@ export function macroTargetsFromTdee(tdeeKcal: number): MacroTotals {
     protein_g: Math.round((tdeeKcal * MACRO_SPLIT.protein) / 4),
     carbs_g: Math.round((tdeeKcal * MACRO_SPLIT.carbs) / 4),
     fat_g: Math.round((tdeeKcal * MACRO_SPLIT.fat) / 9),
+    fiber_g: DAILY_FIBER_TARGET_G,
   }
 }
 

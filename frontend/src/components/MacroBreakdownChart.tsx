@@ -3,17 +3,17 @@ import type { Layout, PlotData } from 'plotly.js'
 import type { MacroTotals } from '../lib/nutritionTargets'
 import { Plot } from '../lib/plot'
 
-const MACRO_LABELS = ['Protein', 'Carbs', 'Fat'] as const
+const MACRO_LABELS = ['Protein', 'Carbs', 'Fat', 'Fiber'] as const
 
 type MacroBreakdownChartProps = {
-  consumed: Pick<MacroTotals, 'protein_g' | 'carbs_g' | 'fat_g'>
-  targets: Pick<MacroTotals, 'protein_g' | 'carbs_g' | 'fat_g'>
+  consumed: Pick<MacroTotals, 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g'>
+  targets: Pick<MacroTotals, 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g'>
 }
 
 function macroValues(
-  macros: Pick<MacroTotals, 'protein_g' | 'carbs_g' | 'fat_g'>,
-): [number, number, number] {
-  return [macros.protein_g, macros.carbs_g, macros.fat_g]
+  macros: Pick<MacroTotals, 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g'>,
+): [number, number, number, number] {
+  return [macros.protein_g, macros.carbs_g, macros.fat_g, macros.fiber_g]
 }
 
 export function MacroBreakdownChart({
@@ -65,7 +65,7 @@ export function MacroBreakdownChart({
       linecolor: '#475569',
     },
     margin: { t: 8, r: 16, b: 48, l: 72 },
-    height: 220,
+    height: 280,
     legend: {
       orientation: 'h',
       y: -0.2,

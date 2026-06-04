@@ -103,6 +103,7 @@ class Settings:
         )
         self.elevenlabs_api_key = _env_optional("ELEVENLABS_API_KEY")
         self.elevenlabs_voice_id = _env_optional("VOICE_ID")
+        self.eventbrite_api_key = _env_optional("EVENTBRITE_API_KEY")
 
     def _credentials(self) -> str:
         return (

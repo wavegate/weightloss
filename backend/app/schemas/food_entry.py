@@ -20,4 +20,5 @@ class FoodEntryRead(BaseModel):
     protein_g: float
     carbs_g: float
     fat_g: float
+    fiber_g: float
     estimation_notes: str | None

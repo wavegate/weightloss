@@ -20,3 +20,22 @@
   min-height: 0;
   overflow-y: auto;
 }
+
+.eventManagerChat {
+  height: 100%;
+  min-height: 0;
+}
+
+.eventManagerChat .copilotKitChat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.eventManagerChat .copilotKitMessages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}

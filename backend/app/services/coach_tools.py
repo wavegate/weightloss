@@ -116,6 +116,7 @@ def get_coach_context(
             "protein_g": round(float(food_today["protein_g"]), 1),
             "carbs_g": round(float(food_today["carbs_g"]), 1),
             "fat_g": round(float(food_today["fat_g"]), 1),
+            "fiber_g": round(float(food_today["fiber_g"]), 1),
         },
         "food_log_last_7_days": {
             "entry_count": week_entry_count,

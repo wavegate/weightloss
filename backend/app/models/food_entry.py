@@ -18,4 +18,5 @@ class FoodEntry(Base):
     protein_g: Mapped[float] = mapped_column(Numeric(7, 2), nullable=False)
     carbs_g: Mapped[float] = mapped_column(Numeric(7, 2), nullable=False)
     fat_g: Mapped[float] = mapped_column(Numeric(7, 2), nullable=False)
+    fiber_g: Mapped[float] = mapped_column(Numeric(7, 2), nullable=False)
     estimation_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

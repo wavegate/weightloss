@@ -6,6 +6,7 @@ import { RequireAuth } from './components/RequireAuth'
 import { FoodLogPage } from './pages/FoodLogPage'
 import { MeasurementsPage } from './pages/MeasurementsPage'
 import { MetabolismPage } from './pages/MetabolismPage'
+import { EventManagerPage } from './pages/EventManagerPage'
 import { VisionPage } from './pages/VisionPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
@@ -18,6 +19,7 @@ function App() {
         <Route path="/sign-up/*" element={<SignUpPage />} />
 
         <Route element={<RequireAuth />}>
+          <Route path="event-manager" element={<EventManagerPage />} />
           <Route
             element={
               <ApiAuthProvider>

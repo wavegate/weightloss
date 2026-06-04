@@ -52,6 +52,7 @@ def _serialize_food_entry(entry: FoodEntry, *, local_date: date | None = None) -
         "protein_g": float(entry.protein_g),
         "carbs_g": float(entry.carbs_g),
         "fat_g": float(entry.fat_g),
+        "fiber_g": float(entry.fiber_g),
         "estimation_notes": entry.estimation_notes,
     }
     if local_date is not None:
@@ -157,6 +158,7 @@ def get_dietician_context(
             "protein_g": round(float(food_today["protein_g"]), 1),
             "carbs_g": round(float(food_today["carbs_g"]), 1),
             "fat_g": round(float(food_today["fat_g"]), 1),
+            "fiber_g": round(float(food_today["fiber_g"]), 1),
             "remaining_calories": (
                 round(budget - float(food_today["calories"]), 1) if budget else None
             ),
@@ -245,6 +247,7 @@ def summarize_food_log(
     total_protein = sum(float(row["protein_g"]) for row in period_rows)
     total_carbs = sum(float(row["carbs_g"]) for row in period_rows)
     total_fat = sum(float(row["fat_g"]) for row in period_rows)
+    total_fiber = sum(float(row["fiber_g"]) for row in period_rows)
     total_entries = sum(int(row["entry_count"]) for row in period_rows)
     days_with_food = len([row for row in period_rows if int(row["entry_count"]) > 0])
 
@@ -272,6 +275,7 @@ def summarize_food_log(
             "protein_g": round(total_protein, 1),
             "carbs_g": round(total_carbs, 1),
             "fat_g": round(total_fat, 1),
+            "fiber_g": round(total_fiber, 1),
         },
         "avg_calories_on_logged_days": avg_daily_calories,
         "daily_calorie_budget": budget,
@@ -354,6 +358,7 @@ def add_food_entry(
             protein_g=estimate.protein_g,
             carbs_g=estimate.carbs_g,
             fat_g=estimate.fat_g,
+            fiber_g=estimate.fiber_g,
             estimation_notes=estimate.notes,
         )
         db.add(entry)
@@ -403,6 +408,7 @@ def update_food_entry(
             entry.protein_g = estimate.protein_g
             entry.carbs_g = estimate.carbs_g
             entry.fat_g = estimate.fat_g
+            entry.fiber_g = estimate.fiber_g
             entry.estimation_notes = estimate.notes
         else:
             entry.name = new_name

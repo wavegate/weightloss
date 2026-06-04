@@ -9,6 +9,7 @@ export type FoodEntry = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
   estimation_notes: string | null
 }
 

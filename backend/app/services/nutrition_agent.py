@@ -19,7 +19,8 @@ You must:
 1. Use the web_search tool to look up nutrition facts or comparable foods online.
 2. Combine search results with reasonable assumptions when exact data is unavailable.
 3. Return estimated totals for the described portion only (not per 100g unless the description is per 100g).
-4. Always set name and description to a short food title and a portion-focused description of what you estimated.
+4. Include dietary fiber (fiber_g) in grams when data is available; use 0 only if the food has negligible fiber.
+5. Always set name and description to a short food title and a portion-focused description of what you estimated.
 
 Be conservative when uncertain. Prefer USDA-style labels and reputable nutrition databases from search results.
 """
@@ -36,6 +37,7 @@ class NutritionEstimate(BaseModel):
     carbs_g: float = Field(
         ge=0, description="Estimated carbohydrates in grams")
     fat_g: float = Field(ge=0, description="Estimated fat in grams")
+    fiber_g: float = Field(ge=0, description="Estimated dietary fiber in grams")
     notes: str = Field(
         description="Brief note on how the estimate was derived and key assumptions"
     )
@@ -69,8 +71,8 @@ def _build_user_message(
 ) -> dict:
     if image_bytes and image_media_type:
         prompt_lines = [
-            "Analyze the food in the attached photo and estimate calories and "
-            "macros for the visible portion.",
+            "Analyze the food in the attached photo and estimate calories, "
+            "macros, and dietary fiber for the visible portion.",
         ]
         if food_name.strip():
             prompt_lines.append(f"User-provided name: {food_name.strip()}")
@@ -96,8 +98,8 @@ def _build_user_message(
     prompt = (
         f"Food name: {food_name}\n"
         f"Description: {description}\n\n"
-        "Search for nutrition information, then estimate calories and macros "
-        "for this food as described. Set name and description in your response "
+        "Search for nutrition information, then estimate calories, macros, "
+        "and dietary fiber for this food as described. Set name and description in your response "
         "to match the provided food name and description."
     )
     return {"role": "user", "content": prompt}

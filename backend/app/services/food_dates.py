@@ -13,7 +13,14 @@ def summarize_food_by_local_date(
 ) -> tuple[dict[str, dict[str, float | int]], dict[str, float | int]]:
     """Group food entries by effective local calendar date in the user's timezone."""
     by_local: dict[str, dict[str, float | int]] = defaultdict(
-        lambda: {"entry_count": 0, "calories": 0.0, "protein_g": 0.0, "carbs_g": 0.0, "fat_g": 0.0}
+        lambda: {
+            "entry_count": 0,
+            "calories": 0.0,
+            "protein_g": 0.0,
+            "carbs_g": 0.0,
+            "fat_g": 0.0,
+            "fiber_g": 0.0,
+        }
     )
 
     for entry in entries:
@@ -29,11 +36,19 @@ def summarize_food_by_local_date(
         bucket["protein_g"] = float(bucket["protein_g"]) + float(entry.protein_g)
         bucket["carbs_g"] = float(bucket["carbs_g"]) + float(entry.carbs_g)
         bucket["fat_g"] = float(bucket["fat_g"]) + float(entry.fat_g)
+        bucket["fiber_g"] = float(bucket["fiber_g"]) + float(entry.fiber_g)
 
     today_key = user_local_today.isoformat()
     food_today = by_local.get(
         today_key,
-        {"entry_count": 0, "calories": 0.0, "protein_g": 0.0, "carbs_g": 0.0, "fat_g": 0.0},
+        {
+            "entry_count": 0,
+            "calories": 0.0,
+            "protein_g": 0.0,
+            "carbs_g": 0.0,
+            "fat_g": 0.0,
+            "fiber_g": 0.0,
+        },
     )
 
     food_by_date = [
@@ -44,6 +59,7 @@ def summarize_food_by_local_date(
             "protein_g": round(float(stats["protein_g"]), 1),
             "carbs_g": round(float(stats["carbs_g"]), 1),
             "fat_g": round(float(stats["fat_g"]), 1),
+            "fiber_g": round(float(stats["fiber_g"]), 1),
         }
         for local_date, stats in sorted(by_local.items(), reverse=True)
     ]
