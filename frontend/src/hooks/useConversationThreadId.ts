@@ -6,9 +6,9 @@ import { useState } from 'react'
  * reloading a prior LangGraph checkpoint.
  */
 export function useConversationThreadId(
-  userId: string,
+  userId: string | null | undefined,
   namespace: string,
 ): string {
   const [sessionId] = useState(() => crypto.randomUUID())
-  return `${userId}:${namespace}:${sessionId}`
+  return `${userId ?? ''}:${namespace}:${sessionId}`
 }
