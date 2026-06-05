@@ -1,15 +1,17 @@
-"""Luma discovery via public city pages (__NEXT_DATA__ initialData)."""
+"""Luma discovery via public pages (__NEXT_DATA__ initialData)."""
 
 from __future__ import annotations
 
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from app.services.event_fetch import http_get
 from app.services.eventbrite_service import EventListing
 
 LUMA_SITE_BASE = "https://lu.ma"
+LUMA_DISCOVER_URL = f"{LUMA_SITE_BASE}/discover"
 
 # Luma city pages use short slugs (e.g. lu.ma/sf). No dedicated South Bay page yet.
 CITY_SLUGS: dict[str, str] = {
@@ -30,6 +32,8 @@ CITY_SLUGS: dict[str, str] = {
     "south-bay": "sf",
     "bay-area": "sf",
 }
+
+LUMA_CATEGORY_SLUGS = ("tech", "ai")
 
 
 def resolve_luma_city_slug(city: str) -> str:
@@ -60,6 +64,19 @@ def _parse_next_data(html: str) -> dict[str, Any]:
     if not isinstance(initial, dict):
         raise RuntimeError("Luma page missing initialData")
     return initial
+
+
+def _collect_event_wrappers(node: Any, found: list[dict[str, Any]]) -> None:
+    if isinstance(node, dict):
+        event = node.get("event")
+        if isinstance(event, dict) and isinstance(event.get("name"), str):
+            if isinstance(event.get("url"), str):
+                found.append(node)
+        for value in node.values():
+            _collect_event_wrappers(value, found)
+    elif isinstance(node, list):
+        for item in node:
+            _collect_event_wrappers(item, found)
 
 
 def _listing_from_wrapper(wrapper: dict[str, Any]) -> EventListing | None:
@@ -106,34 +123,65 @@ def _listing_from_wrapper(wrapper: dict[str, Any]) -> EventListing | None:
     )
 
 
+def _fetch_listings_from_url(url: str, *, max_results: int) -> list[EventListing]:
+    html = http_get(url)
+    initial = _parse_next_data(html)
+    wrappers: list[dict[str, Any]] = []
+    _collect_event_wrappers(initial, wrappers)
+
+    listings: list[EventListing] = []
+    seen_ids: set[str] = set()
+    for wrapper in wrappers:
+        listing = _listing_from_wrapper(wrapper)
+        if not listing or listing.id in seen_ids:
+            continue
+        seen_ids.add(listing.id)
+        listings.append(listing)
+        if len(listings) >= max_results:
+            break
+    return listings
+
+
+def _luma_fetch_urls(city: str, *, broad: bool) -> list[str]:
+    urls = [build_luma_city_url(city)]
+    if broad:
+        urls.append(LUMA_DISCOVER_URL)
+        for category in LUMA_CATEGORY_SLUGS:
+            urls.append(f"{LUMA_SITE_BASE}/{category}")
+    return urls
+
+
 def search_luma_listings(
     *,
     city: str = "sf",
     max_results: int = 20,
+    broad: bool = False,
 ) -> tuple[list[EventListing], str]:
-    if max_results < 1 or max_results > 50:
-        raise ValueError("max_results must be between 1 and 50")
+    if max_results < 1 or max_results > 80:
+        raise ValueError("max_results must be between 1 and 80")
 
-    page_url = build_luma_city_url(city)
-    html = http_get(page_url)
-    initial = _parse_next_data(html)
-    data = initial.get("data")
-    if not isinstance(data, dict):
-        raise RuntimeError("Luma page did not include event data")
-
-    wrappers = data.get("events")
-    if not isinstance(wrappers, list):
-        raise RuntimeError("Luma page did not include events list")
+    urls = _luma_fetch_urls(city, broad=broad)
+    per_url_cap = max(max_results, 40) if broad else max_results
 
     listings: list[EventListing] = []
-    for wrapper in wrappers:
-        if not isinstance(wrapper, dict):
-            continue
-        listing = _listing_from_wrapper(wrapper)
-        if listing:
-            listings.append(listing)
-        if len(listings) >= max_results:
-            break
+    seen_ids: set[str] = set()
+
+    with ThreadPoolExecutor(max_workers=len(urls)) as pool:
+        futures = {
+            pool.submit(_fetch_listings_from_url, url, max_results=per_url_cap): url
+            for url in urls
+        }
+        for future in as_completed(futures):
+            try:
+                batch = future.result()
+            except Exception:
+                continue
+            for listing in batch:
+                if listing.id in seen_ids:
+                    continue
+                seen_ids.add(listing.id)
+                listings.append(listing)
 
     listings.sort(key=lambda item: item.start or "")
-    return listings, page_url
+    page_url = urls[0] if len(urls) == 1 else ", ".join(urls)
+    return listings[:max_results], page_url

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.copilot.router import router as copilot_router
-from app.routers import foods, measurements, metabolism, styling, voice
+from app.routers import events, foods, measurements, metabolism, styling, voice
 
 settings = get_settings()
 
@@ -21,6 +21,7 @@ app.include_router(foods.router)
 app.include_router(metabolism.router)
 app.include_router(styling.router)
 app.include_router(voice.router)
+app.include_router(events.router)
 app.include_router(copilot_router)
 
 

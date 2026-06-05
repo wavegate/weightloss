@@ -19,7 +19,14 @@ function App() {
         <Route path="/sign-up/*" element={<SignUpPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="event-manager" element={<EventManagerPage />} />
+          <Route
+            path="event-manager"
+            element={
+              <ApiAuthProvider>
+                <EventManagerPage />
+              </ApiAuthProvider>
+            }
+          />
           <Route
             element={
               <ApiAuthProvider>

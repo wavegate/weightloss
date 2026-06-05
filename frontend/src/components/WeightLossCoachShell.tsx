@@ -15,6 +15,7 @@ import { CoachVoiceProvider } from './CoachVoiceContext'
 import { CoachVoicePlayButton } from './CoachVoicePlayButton'
 import { CoachNavigationTools } from './CoachNavigationTools'
 import { CoachQuerySync } from './CoachQuerySync'
+import { useConversationThreadId } from '../hooks/useConversationThreadId'
 
 const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
   .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
@@ -77,6 +78,8 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
     }
   }, [getToken, isLoaded, isSignedIn])
 
+  const threadId = useConversationThreadId(userId, 'coach-v3')
+
   const selfManagedAgents = useMemo(() => {
     if (!hasToken) {
       return undefined
@@ -121,7 +124,7 @@ export function WeightLossCoachShell({ children }: WeightLossCoachShellProps) {
           typeof CopilotKit
         >[0]['selfManagedAgents']
       }
-      threadId={`${userId}:coach-v3`}
+      threadId={threadId}
       headers={authHeaders}
     >
       <CoachNavigationTools />

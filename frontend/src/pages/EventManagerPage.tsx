@@ -3,14 +3,14 @@ import { CopilotKit } from '@copilotkit/react-core'
 import { CopilotChat } from '@copilotkit/react-ui'
 import '@copilotkit/react-ui/styles.css'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-
+import { EventPreferencesPanel } from '../components/EventPreferencesPanel'
 import { getBackendUrl } from '../lib/backendUrl'
 import { createCoachHttpAgent } from '../lib/coachAgent'
 import {
   EVENT_MANAGER_AGENT_ID,
   EVENT_MANAGER_AG_UI_PATH,
 } from '../lib/eventManagerAgent'
+import { useConversationThreadId } from '../hooks/useConversationThreadId'
 
 const COPILOT_PUBLIC_LICENSE_KEY = import.meta.env
   .VITE_COPILOT_PUBLIC_LICENSE_KEY as string | undefined
@@ -46,6 +46,8 @@ export function EventManagerPage() {
       cancelled = true
     }
   }, [getToken, isLoaded, isSignedIn])
+
+  const threadId = useConversationThreadId(userId, 'event-manager-v1')
 
   const selfManagedAgents = useMemo(() => {
     if (!hasToken) {
@@ -87,34 +89,32 @@ export function EventManagerPage() {
           typeof CopilotKit
         >[0]['selfManagedAgents']
       }
-      threadId={`${userId}:event-manager-v1`}
+      threadId={threadId}
       headers={authHeaders}
     >
       <div className="flex h-svh max-h-svh flex-col overflow-hidden bg-slate-950 text-slate-100">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold tracking-tight">Event manager</h1>
-            <Link
-              to="/measurements"
-              className="text-sm text-slate-400 transition hover:text-slate-200"
-            >
-              Back to weight loss app
-            </Link>
-          </div>
+          <h1 className="text-lg font-semibold tracking-tight">Event manager</h1>
           <UserButton />
         </header>
 
-        <main className="eventManagerChat min-h-0 flex-1">
-          <CopilotChat
-            className="flex h-full min-h-0 flex-col"
-            labels={{
-              title: 'Event discovery',
-              initial:
-                "Hi! I can help you find events and things to do.\n\nTell me your city, dates, and what you're in the mood for (music, food, sports, etc.).",
-              placeholder: 'What kind of events are you looking for?',
-            }}
-          />
-        </main>
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <aside className="flex w-full max-w-sm shrink-0 flex-col border-r border-slate-800 bg-slate-900/50">
+            <EventPreferencesPanel />
+          </aside>
+
+          <main className="eventManagerChat min-h-0 min-w-0 flex-1">
+            <CopilotChat
+              className="flex h-full min-h-0 flex-col"
+              labels={{
+                title: 'Event discovery',
+                initial:
+                  "Hi! I search Meetup, Eventbrite, Luma, and Funcheap using your saved preferences.\n\nUpdate preferences on the left, or tell me what you're looking for today.",
+                placeholder: 'What kind of events are you looking for?',
+              }}
+            />
+          </main>
+        </div>
       </div>
     </CopilotKit>
   )

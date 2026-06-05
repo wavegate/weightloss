@@ -74,12 +74,66 @@ def test_aggregate_events_parallel(monkeypatch) -> None:
         fake_funcheap,
     )
 
-    payload = aggregate_events(location="cupertino", keywords="tech", timing="weekend")
+    payload = aggregate_events(
+        location="cupertino",
+        keywords="",
+        timing="weekend",
+        categories=[],
+    )
     assert payload["fetched_in_parallel"] is True
+    assert payload["broad_fetch"] is False
     assert payload["count"] == 3
     assert payload["sources"]["meetup"]["count"] == 1
     assert payload["sources"]["luma"]["count"] == 0
     assert payload["sources"]["luma"]["error"] is None
+
+
+def test_aggregate_events_keyword_filter_after_broad_fetch(monkeypatch) -> None:
+    def fake_meetup(**kwargs):
+        assert kwargs.get("keywords") == ""
+        return (
+            [
+                _listing(source="meetup", title="Random Mixer"),
+                _listing(source="meetup", title="Bay Hackathon", url="https://meetup.com/h"),
+            ],
+            "https://meetup.com/find",
+        )
+
+    def fake_luma(**kwargs):
+        assert kwargs.get("broad") is True
+        return (
+            [_listing(source="luma", title="Cursor Hackathon", url="https://lu.ma/h")],
+            "https://lu.ma/sf",
+        )
+
+    monkeypatch.setattr(
+        "app.services.event_aggregator.search_meetup_listings",
+        fake_meetup,
+    )
+    monkeypatch.setattr(
+        "app.services.event_aggregator.search_eventbrite_listings",
+        lambda **_kwargs: ([], "https://eventbrite.com"),
+    )
+    monkeypatch.setattr(
+        "app.services.event_aggregator.search_luma_listings",
+        fake_luma,
+    )
+    monkeypatch.setattr(
+        "app.services.event_aggregator.search_funcheap_listings",
+        lambda **_kwargs: ([], "https://sf.funcheap.com/today/"),
+    )
+
+    payload = aggregate_events(
+        location="cupertino",
+        keywords="hackathon",
+        timing="upcoming",
+        categories=[],
+    )
+    assert payload["broad_fetch"] is True
+    assert payload["raw_count"] == 3
+    assert payload["count"] == 2
+    titles = {e["title"] for e in payload["events"]}
+    assert titles == {"Bay Hackathon", "Cursor Hackathon"}
 
 
 def test_aggregate_events_survives_source_failure(monkeypatch) -> None:

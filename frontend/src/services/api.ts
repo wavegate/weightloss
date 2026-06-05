@@ -58,6 +58,15 @@ export async function apiGet<T>(path: string): Promise<T> {
   return parseResponse<T>(response)
 }
 
+export async function apiPut<T, B>(path: string, body: B): Promise<T> {
+  const response = await fetch(`${getBackendUrl()}${path}`, {
+    method: 'PUT',
+    headers: await buildHeaders(true),
+    body: JSON.stringify(body),
+  })
+  return parseResponse<T>(response)
+}
+
 export async function apiPost<T, B>(path: string, body: B): Promise<T> {
   const response = await fetch(`${getBackendUrl()}${path}`, {
     method: 'POST',
