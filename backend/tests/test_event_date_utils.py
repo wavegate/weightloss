@@ -1,10 +1,6 @@
 from datetime import date
 
-from app.services.event_date_utils import (
-    funcheap_filters_for_range,
-    listing_in_date_range,
-    parse_listing_start,
-)
+from app.services.event_date_utils import listing_in_date_range, parse_listing_start
 
 
 def test_parse_listing_start_variants() -> None:
@@ -23,13 +19,3 @@ def test_listing_in_date_range() -> None:
         range_start=date(2026, 6, 1),
         range_end=date(2026, 6, 30),
     )
-
-
-def test_funcheap_filters_for_range_includes_today_and_weekend() -> None:
-    filters = funcheap_filters_for_range(
-        date(2026, 6, 4),
-        date(2026, 6, 8),
-        reference=date(2026, 6, 4),
-    )
-    assert "today" in filters
-    assert "weekend" in filters

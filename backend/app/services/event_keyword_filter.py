@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from app.services.eventbrite_service import EventListing
+from app.services.event_listing import EventListing
 
 
 def parse_keyword_tokens(keywords: str) -> list[str]:

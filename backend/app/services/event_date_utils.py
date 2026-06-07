@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 
 
 def parse_iso_date(value: str | None) -> date | None:
@@ -32,28 +32,3 @@ def listing_in_date_range(
     if event_day is None:
         return True
     return range_start <= event_day <= range_end
-
-
-def funcheap_filters_for_range(
-    range_start: date,
-    range_end: date,
-    *,
-    reference: date | None = None,
-) -> list[str]:
-    """Pick Funcheap listing pages that may overlap a date range."""
-    ref = reference or date.today()
-    include_today = range_start <= ref <= range_end
-    include_weekend = False
-    cursor = range_start
-    while cursor <= range_end:
-        if cursor.weekday() >= 5:
-            include_weekend = True
-            break
-        cursor += timedelta(days=1)
-
-    filters: list[str] = []
-    if include_today:
-        filters.append("today")
-    if include_weekend:
-        filters.append("weekend")
-    return filters

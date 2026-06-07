@@ -1,38 +1,60 @@
+import json
+
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth.clerk import CurrentUserId
 from app.database import get_db
-from app.schemas.event_preferences import EventPreferencesRead, EventPreferencesUpsert
-from app.services.event_preferences_service import (
-    get_or_create_preferences,
-    preference_options_payload,
-    preferences_to_read,
-    upsert_preferences,
-)
+from app.schemas.meetup_event import MeetupSyncRequest
+from app.services.meetup_event_store import count_stored_events
+from app.services.meetup_service import LOCATION_SLUGS
+from app.services.meetup_sync_service import sync_meetup_events
 
 router = APIRouter(prefix="/events", tags=["events"])
 
+SYNC_LOCATIONS = sorted(
+    {
+        key
+        for key in LOCATION_SLUGS
+        if " " not in key and key != "online"
+    }
+)
 
-@router.get("/preferences/options")
-def get_event_preference_options() -> dict:
-    return preference_options_payload()
+
+@router.get("/locations")
+def list_sync_locations() -> dict[str, list[str]]:
+    return {"locations": SYNC_LOCATIONS}
 
 
-@router.get("/preferences", response_model=EventPreferencesRead)
-def get_event_preferences(
+@router.get("/count")
+def get_stored_event_count(
     db: Session = Depends(get_db),
-    user_id: str = CurrentUserId,
-) -> EventPreferencesRead:
-    row = get_or_create_preferences(db, user_id)
-    return preferences_to_read(row)
+    _user_id: str = CurrentUserId,
+) -> dict[str, int]:
+    return {"count": count_stored_events(db)}
 
 
-@router.put("/preferences", response_model=EventPreferencesRead)
-def put_event_preferences(
-    payload: EventPreferencesUpsert,
+@router.post("/sync")
+def sync_events(
+    payload: MeetupSyncRequest,
     db: Session = Depends(get_db),
-    user_id: str = CurrentUserId,
-) -> EventPreferencesRead:
-    row = upsert_preferences(db, user_id, payload)
-    return preferences_to_read(row)
+    _user_id: str = CurrentUserId,
+) -> StreamingResponse:
+    def event_stream():
+        for update in sync_meetup_events(
+            db,
+            location=payload.location,
+            keywords=payload.keywords,
+        ):
+            yield f"data: {json.dumps(update)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
