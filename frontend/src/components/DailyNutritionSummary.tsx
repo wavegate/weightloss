@@ -4,6 +4,8 @@ import { useFoodsQuery } from '../hooks/useFoods'
 import { useMetabolicProfile } from '../hooks/useMetabolicProfile'
 import { useWeightLossPlan } from '../hooks/useWeightLossPlan'
 import {
+  computeCalorieCarryOver,
+  effectiveDailyCalorieBudget,
   formatMacroDelta,
   macroTargetsFromTdee,
   sumFoodEntriesForLocalDate,
@@ -86,10 +88,10 @@ export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryPro
 
   const profile = profileQuery.data
   const plan = planQuery.data
-  const calorieBudget =
+  const baseCalorieBudget =
     plan?.daily_calorie_target ?? profile?.tdee_kcal ?? null
 
-  if (!calorieBudget) {
+  if (!baseCalorieBudget) {
     return (
       <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/40 p-4">
         <p className="text-sm text-slate-300">
@@ -111,16 +113,34 @@ export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryPro
     selectedDate,
     today,
   )
-  const targets = macroTargetsFromTdee(calorieBudget)
-  const budgetLabel = plan
+  const carryOver = computeCalorieCarryOver(
+    foodsQuery.data ?? [],
+    baseCalorieBudget,
+    selectedDate,
+    today,
+  )
+  const effectiveCalorieBudget = effectiveDailyCalorieBudget(
+    baseCalorieBudget,
+    carryOver,
+  )
+  const targets = macroTargetsFromTdee(baseCalorieBudget)
+  const baseBudgetLabel = plan
     ? `${Math.round(plan.daily_calorie_target).toLocaleString()} kcal (plan)`
-    : `${Math.round(calorieBudget).toLocaleString()} kcal (TDEE)`
-  const caloriesRemaining = Math.round(targets.calories - consumed.calories)
+    : `${Math.round(baseCalorieBudget).toLocaleString()} kcal (TDEE)`
+  const caloriesRemaining = Math.round(
+    effectiveCalorieBudget - consumed.calories,
+  )
   const calorieProgress = Math.min(
     100,
-    (consumed.calories / targets.calories) * 100,
+    (consumed.calories / effectiveCalorieBudget) * 100,
   )
   const isOverCalories = caloriesRemaining < 0
+  const carryOverLabel =
+    carryOver === 0
+      ? null
+      : carryOver > 0
+        ? `+${carryOver.toLocaleString()} kcal carry-over`
+        : `${carryOver.toLocaleString()} kcal carry-over`
 
   return (
     <div className="flex flex-col gap-6">
@@ -145,7 +165,12 @@ export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryPro
               : `${caloriesRemaining.toLocaleString()} kcal left`}
           </p>
           <p className="text-sm text-slate-400">
-            {Math.round(consumed.calories).toLocaleString()} / {budgetLabel}
+            {Math.round(consumed.calories).toLocaleString()} /{' '}
+            {Math.round(effectiveCalorieBudget).toLocaleString()} kcal expected
+          </p>
+          <p className="text-xs text-slate-500">
+            Base {baseBudgetLabel}
+            {carryOverLabel ? ` · ${carryOverLabel} from last 3 days` : null}
           </p>
           {plan ? (
             <p className="mt-1 text-xs text-slate-500">
@@ -159,7 +184,7 @@ export function DailyNutritionSummary({ selectedDate }: DailyNutritionSummaryPro
           role="progressbar"
           aria-valuenow={Math.round(consumed.calories)}
           aria-valuemin={0}
-          aria-valuemax={Math.round(targets.calories)}
+          aria-valuemax={Math.round(effectiveCalorieBudget)}
           aria-label={
             isToday ? 'Calories consumed today' : 'Calories consumed on selected day'
           }

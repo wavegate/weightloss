@@ -130,6 +130,45 @@ export function sumFoodEntriesForDate(
     )
 }
 
+/** Days of food log history that adjust today's calorie target. */
+export const CARRY_OVER_WINDOW_DAYS = 3
+
+export function computeCalorieCarryOver(
+  entries: FoodEntry[],
+  dailyBudget: number,
+  beforeDate: string,
+  localToday: string = todayIsoDate(),
+  windowDays: number = CARRY_OVER_WINDOW_DAYS,
+): number {
+  const consumedByDate = new Map<string, number>()
+  const windowStart = addDays(beforeDate, -windowDays)
+
+  for (const entry of entries) {
+    const localDate = effectiveFoodLocalDate(entry.recorded_at, localToday)
+    consumedByDate.set(
+      localDate,
+      (consumedByDate.get(localDate) ?? 0) + entry.calories,
+    )
+  }
+
+  let carry = 0
+  for (const [date, consumed] of consumedByDate) {
+    if (date >= beforeDate || date < windowStart) {
+      continue
+    }
+    carry += dailyBudget - consumed
+  }
+
+  return Math.round(carry)
+}
+
+export function effectiveDailyCalorieBudget(
+  dailyBudget: number,
+  carryOverKcal: number,
+): number {
+  return Math.round(dailyBudget + carryOverKcal)
+}
+
 export function macroTargetsFromTdee(tdeeKcal: number): MacroTotals {
   return {
     calories: tdeeKcal,

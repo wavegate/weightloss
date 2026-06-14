@@ -12,6 +12,10 @@ from app.models.food_entry import FoodEntry
 from app.models.metabolic_profile import MetabolicProfile
 from app.models.weight_loss_plan import WeightLossPlan
 from app.services.weight_loss_plan import serialize_weight_loss_plan
+from app.services.calorie_carry_over import (
+    compute_calorie_carry_over,
+    effective_daily_calorie_budget,
+)
 from app.services.food_dates import food_query_window, summarize_food_by_local_date
 from app.services.user_date import (
     effective_local_calendar_date,
@@ -98,6 +102,23 @@ def get_coach_context(
         latest_date is None or _iso_week(latest_date) != _iso_week(today)
     )
 
+    daily_budget: float | None = None
+    if plan is not None:
+        daily_budget = float(plan.daily_calorie_target)
+    elif profile is not None and profile.tdee_kcal is not None:
+        daily_budget = float(profile.tdee_kcal)
+
+    carry_over = (
+        compute_calorie_carry_over(food_by_date, daily_budget, today)
+        if daily_budget is not None
+        else None
+    )
+    effective_budget = (
+        effective_daily_calorie_budget(daily_budget, carry_over)
+        if daily_budget is not None and carry_over is not None
+        else daily_budget
+    )
+
     payload: dict = {
         "user_timezone": user_timezone,
         "today": today.isoformat(),
@@ -109,7 +130,9 @@ def get_coach_context(
         "latest_measurement": None,
         "metabolic_profile": None,
         "weight_loss_plan": None,
-        "daily_calorie_budget": None,
+        "daily_calorie_budget": daily_budget,
+        "calorie_carry_over_kcal": carry_over,
+        "effective_daily_calorie_budget": effective_budget,
         "food_today": {
             "entry_count": int(food_today["entry_count"]),
             "calories": round(float(food_today["calories"]), 1),
@@ -158,14 +181,11 @@ def get_coach_context(
             "bmr_kcal": float(profile.bmr_kcal) if profile.bmr_kcal else None,
             "tdee_kcal": float(profile.tdee_kcal) if profile.tdee_kcal else None,
         }
-        if plan is None and profile.tdee_kcal is not None:
-            payload["daily_calorie_budget"] = float(profile.tdee_kcal)
 
     if plan:
         payload["weight_loss_plan"] = serialize_weight_loss_plan(
             plan, reference_date=today
         )
-        payload["daily_calorie_budget"] = float(plan.daily_calorie_target)
 
     return json.dumps(payload)
 

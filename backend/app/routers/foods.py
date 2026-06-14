@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.food_entry import FoodEntry
 from app.schemas.food_entry import FoodEntryRead
 from app.services.food_image import validate_image_upload
+from app.services.food_matching import find_reusable_food_entry, nutrition_estimate_from_entry
 from app.services.nutrition_agent import estimate_nutrition
 
 router = APIRouter(prefix="/foods", tags=["foods"])
@@ -90,13 +91,24 @@ async def create_food_entry(
         )
 
     try:
-        estimate = await asyncio.to_thread(
-            estimate_nutrition,
-            name,
-            description,
-            image_bytes=image_bytes,
-            image_media_type=image_media_type,
-        )
+        if has_image:
+            estimate = await asyncio.to_thread(
+                estimate_nutrition,
+                name,
+                description,
+                image_bytes=image_bytes,
+                image_media_type=image_media_type,
+            )
+        else:
+            match = find_reusable_food_entry(db, user_id, name, description)
+            if match is not None:
+                estimate = nutrition_estimate_from_entry(match)
+            else:
+                estimate = await asyncio.to_thread(
+                    estimate_nutrition,
+                    name,
+                    description,
+                )
     except Exception as exc:
         raise HTTPException(
             status_code=502,

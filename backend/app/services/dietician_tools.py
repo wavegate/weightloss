@@ -14,8 +14,13 @@ from app.models.body_measurement import BodyMeasurement
 from app.models.food_entry import FoodEntry
 from app.models.metabolic_profile import MetabolicProfile
 from app.models.weight_loss_plan import WeightLossPlan
+from app.services.calorie_carry_over import (
+    compute_calorie_carry_over,
+    effective_daily_calorie_budget,
+)
 from app.services.food_dates import food_query_window, summarize_food_by_local_date
-from app.services.nutrition_agent import estimate_nutrition
+from app.services.food_matching import find_reusable_food_entry, nutrition_estimate_from_entry
+from app.services.nutrition_agent import NutritionEstimate, estimate_nutrition
 from app.services.user_date import (
     effective_local_calendar_date,
     resolve_user_local_date,
@@ -89,6 +94,18 @@ def _resolve_budget(
     return None
 
 
+def _resolve_food_nutrition(
+    db,
+    user_id: str,
+    name: str,
+    description: str,
+) -> NutritionEstimate:
+    match = find_reusable_food_entry(db, user_id, name, description)
+    if match is not None:
+        return nutrition_estimate_from_entry(match)
+    return estimate_nutrition(name.strip(), description.strip())
+
+
 @tool
 def get_dietician_context(
     config: Annotated[RunnableConfig, InjectedToolArg],
@@ -146,11 +163,21 @@ def get_dietician_context(
 
     budget = _resolve_budget(profile, plan)
     macro_targets = _macro_targets_from_budget(budget) if budget else None
+    carry_over = (
+        compute_calorie_carry_over(food_by_date, budget, today) if budget else None
+    )
+    effective_budget = (
+        effective_daily_calorie_budget(budget, carry_over)
+        if budget is not None and carry_over is not None
+        else budget
+    )
 
     payload: dict = {
         "user_timezone": user_timezone,
         "today": today.isoformat(),
         "daily_calorie_budget": budget,
+        "calorie_carry_over_kcal": carry_over,
+        "effective_daily_calorie_budget": effective_budget,
         "macro_targets_30_40_30": macro_targets,
         "food_today": {
             "entry_count": int(food_today["entry_count"]),
@@ -160,7 +187,9 @@ def get_dietician_context(
             "fat_g": round(float(food_today["fat_g"]), 1),
             "fiber_g": round(float(food_today["fiber_g"]), 1),
             "remaining_calories": (
-                round(budget - float(food_today["calories"]), 1) if budget else None
+                round(effective_budget - float(food_today["calories"]), 1)
+                if effective_budget
+                else None
             ),
         },
         "food_log_by_local_date": food_by_date,
@@ -340,15 +369,15 @@ def add_food_entry(
     today = resolve_user_local_date(config)
     entry_date = date.fromisoformat(recorded_at) if recorded_at else today
 
-    try:
-        estimate = estimate_nutrition(name.strip(), description.strip())
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to estimate nutrition: {exc}"})
-
-    entry_name = name.strip() or estimate.name
-    entry_description = description.strip() or estimate.description
-
     with SessionLocal() as db:
+        try:
+            estimate = _resolve_food_nutrition(db, user_id, name, description)
+        except Exception as exc:
+            return json.dumps({"error": f"Failed to estimate nutrition: {exc}"})
+
+        entry_name = name.strip() or estimate.name
+        entry_description = description.strip() or estimate.description
+
         entry = FoodEntry(
             user_id=user_id,
             recorded_at=entry_date,
@@ -365,12 +394,12 @@ def add_food_entry(
         db.commit()
         db.refresh(entry)
 
-    return json.dumps(
-        {
-            "saved": True,
-            "entry": _serialize_food_entry(entry),
-        }
-    )
+        return json.dumps(
+            {
+                "saved": True,
+                "entry": _serialize_food_entry(entry),
+            }
+        )
 
 
 @tool
